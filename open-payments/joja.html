@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba de API Frankfurter</title>
+</head>
+<body>
+
+  <h1>Prueba de API de Tipo de Cambio</h1>
+  <p>Revisa esta página y la consola (F12) para ver los resultados:</p>
+
+  <script>
+    // 1. Definimos la función
+    async function convertCurrency(amount, from, to) {
+      const url = `https://api.frankfurter.app/latest?amount=${amount}&from=${from}&to=${to}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // 2. Mostramos el resultado en la consola
+        console.log(`${amount} ${from} equivalen a ${data.rates[to]} ${to}`);
+
+        // 3. (Extra) Mostramos el resultado en la página
+        document.body.innerHTML += `<p><b>${amount} ${from}</b> equivalen a <b>${data.rates[to]} ${to}</b></p>`;
+
+      } catch (error) {
+        console.error('Error en la conversión:', error);
+        document.body.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    }
+
+    // 4. Llamamos a la función
+    convertCurrency(100, 'USD', 'MXN');
+    convertCurrency(50, 'EUR', 'CAD');
+
+  </script>
+
+</body>
+</html>
