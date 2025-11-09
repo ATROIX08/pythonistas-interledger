@@ -1,202 +1,185 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import './App.css';
 
-// URL del backend - ajusta el puerto si es necesario
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:5000/api";
 
-export default function App() {
-  const [usuario, setUsuario] = useState('AnaRaquel');
-  const [saldo, setSaldo] = useState(12480.25);
-  // Estado para controlar el valor del input de Monto
-  const [monto, setMonto] = useState(''); 
-  // Estado para el ID del usuario destino
-  const [userIdDestino, setUserIdDestino] = useState('');
-  // Estados para manejar la carga y errores
+function App() {
+  const [sender, setSender] = useState("");
+  const [recipient, setRecipient] = useState("");
+  const [amount, setAmount] = useState("");
+  const [balance, setBalance] = useState(null);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [pestaña, setPestaña] = useState('inicio'); 
+  const [view, setView] = useState("home");
+  const [error, setError] = useState("");
 
-  const handleUsuarioChange = (e) => setUsuario(e.target.value);
-  const handleUserIdDestinoChange = (e) => {
-    setUserIdDestino(e.target.value);
-    setError(''); // Limpiar error al escribir
-    setSuccess(''); // Limpiar mensaje de éxito
-  };
-
-  // FUNCIÓN CORREGIDA: Bloquea letras y el signo menos (-)
-  const handleMontoChange = (e) => {
-    let valor = e.target.value;
-    
-    // EXPRESIÓN REGULAR CORREGIDA: 
-    // 1. Reemplaza cualquier cosa que NO sea un número (0-9) o un punto decimal (.) por vacío.
-    // 2. Esto bloquea estrictamente letras, el signo menos (-) y otros caracteres especiales.
-    const valorLimpio = valor.replace(/[^\d.]/g, '');
-    
-    // Opcional: Esto asegura que solo haya un punto decimal, útil para montos.
-    const parts = valorLimpio.split('.');
-    if (parts.length > 2) {
-      valor = parts[0] + '.' + parts.slice(1).join('');
-    } else {
-      valor = valorLimpio;
-    }
-
-    setMonto(valor);
-    setError(''); // Limpiar error al escribir
-    setSuccess(''); // Limpiar mensaje de éxito
-  };
-  
-  // Función para enviar transacción conectada al backend
-  const handleEnviar = async () => {
-    // Validaciones
-    if (!userIdDestino.trim()) {
-      setError('Por favor ingresa el ID del usuario destino');
-      return;
-    }
-    
-    if (!monto || parseFloat(monto) <= 0) {
-      setError('Por favor ingresa un monto válido');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
+  // ===========================
+  // 🧩 Obtener datos del usuario
+  // ===========================
+  const fetchUser = async () => {
+    if (!sender) return;
     try {
-      // Llamar al endpoint de envío del backend
-      const response = await fetch(`${API_BASE_URL}/api/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userIdDestino.trim(),
-          amount: parseFloat(monto)
-        })
-      });
+      setLoading(true);
+      setError("");
 
-      const data = await response.json();
+      const res = await fetch(`${API_BASE}/user/${sender}`);
+      const data = await res.json();
 
-      if (response.ok && data.success) {
-        setSuccess(`Transacción enviada exitosamente a ${userIdDestino}. Monto: $${monto}`);
-        setMonto(''); // Limpiar el campo de monto
-        setUserIdDestino(''); // Limpiar el campo de usuario destino
-      } else {
-        setError(data.error || 'Error al enviar la transacción');
-      }
+      if (!data.success) throw new Error(data.error);
+      setBalance(data.wallet.balance || 0);
+      setHistory(data.wallet.history || []);
     } catch (err) {
-      console.error('Error al conectar con el backend:', err);
-      setError('Error de conexión. Asegúrate de que el backend esté ejecutándose en http://localhost:5000');
+      console.error(err);
+      setError("Error al obtener datos del usuario.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ===========================
+  // 💸 Enviar transferencia
+  // ===========================
+  const handleTransfer = async () => {
+    if (!sender || !recipient || !amount) {
+      alert("Por favor completa todos los campos.");
+      return;
+    }
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch(`${API_BASE}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sender_public_name: sender,
+          recipient_wallet_url: recipient,
+          amount,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error);
+      alert("✅ Transferencia realizada con éxito");
+      fetchUser();
+    } catch (err) {
+      console.error(err);
+      setError("Error al realizar la transferencia.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ===========================
+  // 📲 Render principal
+  // ===========================
   return (
     <div className="app-container">
-      {/* Encabezado */}
       <header className="app-header">
-        <h1 className="logo">OpenPay+ 💠</h1>
-        <div className="user-tag">{usuario}</div>
+        <div className="logo">💳 OpenPay Demo</div>
+        {sender && <div className="user-tag">@{sender}</div>}
       </header>
 
-      {/* Contenido principal */}
       <main className="main-content">
-        {pestaña === 'inicio' && (
-          <>
-            <div className="card saldo-card">
-              <h2>Saldo disponible</h2>
-              <p className="saldo">${saldo.toLocaleString()} MXN</p>
-              <button onClick={handleEnviar}>Enviar dinero</button>
-            </div>
-          </>
+        {/* Pestaña HOME */}
+        {view === "home" && (
+          <div className="card saldo-card">
+            <h2>Saldo actual</h2>
+            {loading ? (
+              <p>Cargando...</p>
+            ) : (
+              <p className="saldo">
+                {balance !== null ? `${balance} Ⓝ` : "Ingresa tu usuario"}
+              </p>
+            )}
+            <button onClick={fetchUser}>🔄 Actualizar</button>
+            {error && <p style={{ color: "red" }}>{error}</p>}
+          </div>
         )}
 
-        {pestaña === 'transferir' && (
-          <div className="card">
+        {/* Pestaña TRANSFERIR */}
+        {view === "transfer" && (
+          <div className="card user-login">
             <h2>Transferir fondos</h2>
             <input
               className="input"
-              type="text"
-              placeholder="ID del usuario destino (ej: humberto_wallet)"
-              value={userIdDestino}
-              onChange={handleUserIdDestinoChange}
-              disabled={loading}
+              placeholder="Tu nombre público (sender)"
+              value={sender}
+              onChange={(e) => setSender(e.target.value)}
             />
             <input
               className="input"
-              // CAMBIO CLAVE: Se cambió a type="text" para poder controlar la entrada estrictamente
-              type="text" 
-              placeholder="Monto"
-              // El patrón inputmode="decimal" ayuda a abrir el teclado numérico en móviles
-              inputMode="decimal" 
-              value={monto} 
-              onChange={handleMontoChange}
-              disabled={loading}
+              placeholder="Wallet del destinatario (URL completa)"
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
             />
-            {error && (
-              <div style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>
-                {error}
-              </div>
-            )}
-            {success && (
-              <div style={{ color: 'green', marginTop: '10px', fontSize: '14px' }}>
-                {success}
-              </div>
-            )}
-            <button 
-              onClick={handleEnviar}
-              disabled={loading}
-              style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
-            >
-              {loading ? 'Enviando...' : 'Confirmar envío'}
+            <input
+              className="input"
+              type="number"
+              placeholder="Monto a enviar"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            <button onClick={handleTransfer} disabled={loading}>
+              {loading ? "Procesando..." : "Enviar"}
             </button>
           </div>
         )}
 
-        {pestaña === 'recibir' && (
-          <div className="card">
-            <h2>Recibir dinero</h2>
-            <p>Comparte tu usuario para recibir transferencias:</p>
-            <div className="user-box">{usuario}</div>
-          </div>
-        )}
-
-        {pestaña === 'historial' && (
-          <div className="history">
-            <h3>Movimientos recientes</h3>
-            <ul>
-              <li><span>Pago a “TechStore”</span><span>- $499</span></li>
-              <li><span>Depósito internacional</span><span>+ $2,100</span></li>
-              <li><span>Transferencia de “Carlos”</span><span>+ $350</span></li>
-            </ul>
-          </div>
-        )}
-
-        {pestaña === 'config' && (
-          <div className="user-login">
-            <label htmlFor="usuario">Editar nombre de usuario</label>
+        {/* Pestaña CONFIG */}
+        {view === "config" && (
+          <div className="card user-login">
+            <h2>Configurar usuario</h2>
+            <label>Nombre público (public name):</label>
             <input
-              id="usuario"
               type="text"
-              placeholder="Ej. AnaRaquel"
-              value={usuario}
-              onChange={handleUsuarioChange}
+              placeholder="Ejemplo: bryan"
+              value={sender}
+              onChange={(e) => setSender(e.target.value)}
             />
-            <p className="hint">Este nombre se usará en tus transacciones</p>
+            <button onClick={fetchUser}>Guardar / Cargar</button>
+          </div>
+        )}
+
+        {/* Historial de transacciones */}
+        {view === "home" && history.length > 0 && (
+          <div className="history">
+            <h3>Historial reciente</h3>
+            <ul>
+              {history.map((tx, i) => (
+                <li key={i}>
+                  <span>{tx.description}</span>
+                  <span>{tx.amount} Ⓝ</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </main>
 
-      {/* Barra inferior de navegación */}
       <nav className="bottom-nav">
-        <button onClick={() => setPestaña('inicio')} className={pestaña === 'inicio' ? 'active' : ''}>🏠 Inicio</button>
-        <button onClick={() => setPestaña('transferir')} className={pestaña === 'transferir' ? 'active' : ''}>💸 Transferir remesas</button>
-        <button onClick={() => setPestaña('recibir')} className={pestaña === 'recibir' ? 'active' : ''}>📥 Recibir remesas</button>
-        <button onClick={() => setPestaña('historial')} className={pestaña === 'historial' ? 'active' : ''}>🧾 Historial</button>
-        <button onClick={() => setPestaña('config')} className={pestaña === 'config' ? 'active' : ''}>⚙️ Config</button>
+        <button
+          onClick={() => setView("home")}
+          className={view === "home" ? "active" : ""}
+        >
+          Inicio
+        </button>
+        <button
+          onClick={() => setView("transfer")}
+          className={view === "transfer" ? "active" : ""}
+        >
+          Transferir
+        </button>
+        <button
+          onClick={() => setView("config")}
+          className={view === "config" ? "active" : ""}
+        >
+          Config
+        </button>
       </nav>
     </div>
   );
 }
+
+export default App;
