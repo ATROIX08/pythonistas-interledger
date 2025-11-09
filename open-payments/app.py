@@ -183,4 +183,4 @@ if __name__ == "__main__":
         print("Ejecuta 'python manage_database.py init' para crearla.")
     
     # Ejecutar el servidor Flask en modo desarrollo
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
