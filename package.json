@@ -128,7 +128,8 @@
   "bugs": {
     "url": "https://github.com/ATROIX08/pythonistas-interledger/issues"
   },
-  "homepage": "https://github.com/ATROIX08/pythonistas-interledger#readme",
+  "homepage": "https://github.com/ATROIX08/pythonistas-interledger#rea
+  "type": "module",main
   "description": ""
 }
 
