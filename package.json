@@ -1,7 +1,6 @@
 {
   "name": "pythonistas-interledger",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -124,5 +123,7 @@
     "url": "https://github.com/ATROIX08/pythonistas-interledger/issues"
   },
   "homepage": "https://github.com/ATROIX08/pythonistas-interledger#readme",
-  "type": "module"
+  "type": "module",
+  "description": ""
 }
+
