@@ -1,245 +1,284 @@
-/* Fondo general */
+/* Estilos generales */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --background-color: #f8f9fa;
+    --text-color: #333;
+    --card-bg: #fff;
+    --border-color: #ddd;
+    --font-size-base: 16px;
+}
+
 body {
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: linear-gradient(180deg, #072f4f 0%, #0d1b2a 100%);
-  color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+    font-size: var(--font-size-base);
+    transition: background-color 0.3s, color 0.3s;
 }
 
-/* Contenedor principal */
-.app-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-  box-sizing: border-box;
+.container {
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-/* Encabezado */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(15, 32, 65, 0.95);
-  padding: 1rem 2rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  margin-bottom: 1rem;
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
-.logo {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #0ef;
-  letter-spacing: 1px;
+h1, h2 {
+    color: var(--primary-color);
+    transition: color 0.3s;
 }
 
-.user-tag {
-  background: #0ef3;
-  padding: 0.5rem 1rem;
-  border-radius: 10px;
-  font-weight: 500;
-  border: 1px solid #0ef6;
-}
-
-/* Contenido principal */
-.main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.2rem;
-}
-
-/* Tarjetas (card) */
 .card {
-  background: rgba(10, 24, 48, 0.9);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: background-color 0.3s;
 }
 
-/* --- INICIO DE NUEVOS CAMBIOS (Petición de agrandar) --- */
-/* 1. Hacer la tarjeta de saldo más grande (más padding vertical) */
-.saldo-card {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
+.form-group {
+    margin-bottom: 1rem;
 }
 
-/* 2. Agrandar el monto de saldo SOLO en esa tarjeta */
-.saldo-card .saldo {
-  font-size: 3rem; /* Era 2.4rem */
-  margin-bottom: 1.5rem;
-}
-/* --- FIN DE NUEVOS CAMBIOS --- */
-
-.card h2 {
-  margin-top: 0;
-  color: #00c8ff;
-  margin-bottom: 0.5rem;
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
 }
 
-.saldo {
-  font-size: 2.4rem;
-  font-weight: bold;
-  margin: 0.5rem 0 1rem;
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box; /* Asegura que el padding no afecte el ancho total */
+    font-size: 1rem;
 }
 
-/* Botones */
-button {
-  background: #00c8ff;
-  color: #001;
-  border: none;
-  padding: 0.8rem 1.2rem;
-  border-radius: 12px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    background-color: var(--secondary-color);
+    color: #fff;
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: center;
+    transition: opacity 0.2s;
 }
 
-button:hover {
-  background: #00e6ff;
-  transform: translateY(-1px);
+.btn-primary {
+    background-color: var(--primary-color);
 }
 
-/* Acciones rápidas (AUNQUE SE BORRARON DE 'INICIO', LO DEJAMOS POR SI SE USA EN OTRO LADO) */
-.quick-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+.btn:hover {
+    opacity: 0.9;
 }
 
-.quick-actions button {
-  flex: 1;
-  background: #122b53;
-  color: #fff;
-  padding: 1rem;
-  border-radius: 12px;
-  font-weight: 500;
-  border: 1px solid #0ef5;
+footer {
+    text-align: center;
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: #888;
 }
 
-.quick-actions button:hover {
-  background: #164078;
+#response-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 4px;
 }
 
-/* Historial */
-.history {
-  background: rgba(12, 26, 52, 0.9);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+#response-message.success {
+    background-color: #d4edda;
+    color: #155724;
 }
 
-.history h3 {
-  color: #0ef;
-  margin-top: 0;
-  margin-bottom: 1rem;
+#response-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
 }
 
-.history ul {
-  list-style: none;
-  padding: 0;
+/* Modo Adulto Mayor */
+.senior-mode {
+    --background-color: #000;
+    --text-color: #0f0; /* Color fosforescente */
+    --primary-color: #0f0;
+    --card-bg: #111;
+    --border-color: #333;
+    --font-size-base: 24px; /* Fuente más grande */
 }
 
-.history li {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+.senior-mode .btn-primary {
+    background-color: #0a0;
+    color: #000;
+    font-weight: bold;
 }
 
-.history li:last-child {
-  border-bottom: none;
+.senior-mode .form-group input,
+.senior-mode .form-group textarea {
+    background-color: #222;
+    color: #0f0;
+    border-color: #444;
 }
 
-/* Sección de usuario */
-.user-login {
-  background: rgba(12, 26, 52, 0.9);
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-  text-align: center;
+
+/* Estilos para el interruptor (Toggle Switch) */
+.accessibility-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-/* --- INICIO DE CORRECCIONES Y MEJORAS (De la vez pasada) --- */
-
-/* CORRECCIÓN 1: Para la pestaña "Config" (Label) */
-.user-login label {
-  display: block;      
-  margin-bottom: 0.8rem; 
-  font-size: 1.1rem;   
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
 }
 
-/* CORRECCIÓN 2: Para la pestaña "Config" (Input) */
-.user-login input {
-  display: block;
-  width: 90%;
-  max-width: 450px;
-  padding: 0.8rem 1rem;
-  margin: 0.8rem auto;
-  border-radius: 8px;
-  border: none;
-  font-size: 1rem;
-  background: #fff;
-  color: #0d1b2a;
+.switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
-/* CORRECCIÓN 3: Para la pestaña "Transferir" (Input) */
-.input {
-  display: block;
-  width: 90%;
-  max-width: 450px;
-  padding: 0.8rem 1rem;
-  margin: 0.8rem auto;
-  border-radius: 8px;
-  border: none;
-  font-size: 1rem;
-  background: #fff;
-  color: #0d1b2a;
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
 }
 
-/* MEJORA PROFESIONAL: Efecto 'focus' */
-.input:focus,
-.user-login input:focus {
-  outline: none; 
-  box-shadow: 0 0 0 3px rgba(0, 239, 255, 0.5); 
-  border: 1px solid #0ef;
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
 }
 
-/* --- FIN DE CORRECCIONES Y MEJORAS --- */
-
-.hint {
-  color: #ccc;
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
+input:checked + .slider {
+    background-color: #007bff;
 }
 
-/* Barra de navegación inferior */
-.bottom-nav {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  justify-content: space-around;
-  background: rgba(10, 24, 48, 0.95);
-  padding: 0.8rem 0;
-  border-top: 1px solid rgba(0,255,255,0.2);
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+.senior-mode input:checked + .slider {
+    background-color: #0f0;
 }
 
-.bottom-nav button {
-  flex: 1;
-  background: transparent;
-  color: #eee;
-  border: none;
-  font-size: 1.1rem;
+input:checked + .slider:before {
+    transform: translateX(26px);
 }
 
-.bottom-nav button.active {
-  color: #0ef;
-  font-weight: bold;
-  text-shadow: 0 0 8px #0ef;
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.senior-mode .modal-close-button {
+    color: var(--primary-color);
+}
+
+
+/* Lista de alias guardados dentro del modal */
+.saved-aliases-list {
+    margin-top: 2rem;
+    max-height: 150px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.saved-aliases-list h4 {
+    margin-top: 0;
+}
+
+.saved-aliases-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.saved-aliases-list li {
+    margin-bottom: 0.5rem;
+    font-size: 0.9em;
+}
+
+.saved-aliases-list strong {
+    color: var(--primary-color);
+}
+
+/* Estilos para el Selector de Usuario */
+.user-selector-card {
+    text-align: center;
+}
+
+.user-selector-card select {
+    padding: 0.5rem;
+    font-size: 1.1rem;
+    min-width: 200px;
+    margin-top: 0.5rem;
+}
+
+/* Estilo para el formulario deshabilitado */
+.transaction-form-disabled {
+    opacity: 0.5;
+    pointer-events: none;
 }

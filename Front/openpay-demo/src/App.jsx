@@ -1,185 +1,75 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import AliasManager from './components/AliasManager';
+import TransactionForm from './components/TransactionForm';
 import './App.css';
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:5000/api";
+const API_BASE_URL = 'http://localhost:5000';
 
 function App() {
-  const [sender, setSender] = useState("");
-  const [recipient, setRecipient] = useState("");
-  const [amount, setAmount] = useState("");
-  const [balance, setBalance] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [view, setView] = useState("home");
-  const [error, setError] = useState("");
+    const [isSeniorMode, setIsSeniorMode] = useState(false);
+    const [serverStatus, setServerStatus] = useState('Verificando...');
+    
+    // El estado de los alias se carga desde localStorage
+    const [aliases, setAliases] = useState(() => {
+        const savedAliases = localStorage.getItem('aliases');
+        // Asegurarse de que los datos cargados sean un objeto
+        try {
+            const parsed = JSON.parse(savedAliases);
+            return typeof parsed === 'object' && parsed !== null ? parsed : {};
+        } catch (e) {
+            return {};
+        }
+    });
 
-  // ===========================
-  // 🧩 Obtener datos del usuario
-  // ===========================
-  const fetchUser = async () => {
-    if (!sender) return;
-    try {
-      setLoading(true);
-      setError("");
+    // Efecto para verificar el estado del servidor
+    useEffect(() => {
+        const checkServerHealth = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/health`);
+                setServerStatus(response.ok ? 'Conectado' : 'Desconectado');
+            } catch (error) {
+                setServerStatus('Desconectado');
+            }
+        };
+        checkServerHealth();
+    }, []);
+    
+    // Efecto para aplicar la clase del modo senior al body
+    useEffect(() => {
+        document.body.className = isSeniorMode ? 'senior-mode' : '';
+    }, [isSeniorMode]);
 
-      const res = await fetch(`${API_BASE}/user/${sender}`);
-      const data = await res.json();
+    const statusColor = serverStatus === 'Conectado' ? 'green' : 'red';
 
-      if (!data.success) throw new Error(data.error);
-      setBalance(data.wallet.balance || 0);
-      setHistory(data.wallet.history || []);
-    } catch (err) {
-      console.error(err);
-      setError("Error al obtener datos del usuario.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    return (
+        <div className="container">
+            <header>
+                <h1>Remesas Simplificadas</h1>
+                <div className="accessibility-controls">
+                    <label htmlFor="senior-mode-toggle">Modo Adulto Mayor</label>
+                    <label className="switch">
+                        <input
+                            type="checkbox"
+                            id="senior-mode-toggle"
+                            checked={isSeniorMode}
+                            onChange={() => setIsSeniorMode(!isSeniorMode)}
+                        />
+                        <span className="slider round"></span>
+                    </label>
+                </div>
+            </header>
 
-  // ===========================
-  // 💸 Enviar transferencia
-  // ===========================
-  const handleTransfer = async () => {
-    if (!sender || !recipient || !amount) {
-      alert("Por favor completa todos los campos.");
-      return;
-    }
-    try {
-      setLoading(true);
-      setError("");
+            <main>
+                {/* Pasamos tanto aliases como setAliases a AliasManager */}
+                <AliasManager aliases={aliases} setAliases={setAliases} />
+                <TransactionForm aliases={aliases} />
+            </main>
 
-      const res = await fetch(`${API_BASE}/send`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sender_public_name: sender,
-          recipient_wallet_url: recipient,
-          amount,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!data.success) throw new Error(data.error);
-      alert("✅ Transferencia realizada con éxito");
-      fetchUser();
-    } catch (err) {
-      console.error(err);
-      setError("Error al realizar la transferencia.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ===========================
-  // 📲 Render principal
-  // ===========================
-  return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="logo">💳 OpenPay Demo</div>
-        {sender && <div className="user-tag">@{sender}</div>}
-      </header>
-
-      <main className="main-content">
-        {/* Pestaña HOME */}
-        {view === "home" && (
-          <div className="card saldo-card">
-            <h2>Saldo actual</h2>
-            {loading ? (
-              <p>Cargando...</p>
-            ) : (
-              <p className="saldo">
-                {balance !== null ? `${balance} Ⓝ` : "Ingresa tu usuario"}
-              </p>
-            )}
-            <button onClick={fetchUser}>🔄 Actualizar</button>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-          </div>
-        )}
-
-        {/* Pestaña TRANSFERIR */}
-        {view === "transfer" && (
-          <div className="card user-login">
-            <h2>Transferir fondos</h2>
-            <input
-              className="input"
-              placeholder="Tu nombre público (sender)"
-              value={sender}
-              onChange={(e) => setSender(e.target.value)}
-            />
-            <input
-              className="input"
-              placeholder="Wallet del destinatario (URL completa)"
-              value={recipient}
-              onChange={(e) => setRecipient(e.target.value)}
-            />
-            <input
-              className="input"
-              type="number"
-              placeholder="Monto a enviar"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-            <button onClick={handleTransfer} disabled={loading}>
-              {loading ? "Procesando..." : "Enviar"}
-            </button>
-          </div>
-        )}
-
-        {/* Pestaña CONFIG */}
-        {view === "config" && (
-          <div className="card user-login">
-            <h2>Configurar usuario</h2>
-            <label>Nombre público (public name):</label>
-            <input
-              type="text"
-              placeholder="Ejemplo: bryan"
-              value={sender}
-              onChange={(e) => setSender(e.target.value)}
-            />
-            <button onClick={fetchUser}>Guardar / Cargar</button>
-          </div>
-        )}
-
-        {/* Historial de transacciones */}
-        {view === "home" && history.length > 0 && (
-          <div className="history">
-            <h3>Historial reciente</h3>
-            <ul>
-              {history.map((tx, i) => (
-                <li key={i}>
-                  <span>{tx.description}</span>
-                  <span>{tx.amount} Ⓝ</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </main>
-
-      <nav className="bottom-nav">
-        <button
-          onClick={() => setView("home")}
-          className={view === "home" ? "active" : ""}
-        >
-          Inicio
-        </button>
-        <button
-          onClick={() => setView("transfer")}
-          className={view === "transfer" ? "active" : ""}
-        >
-          Transferir
-        </button>
-        <button
-          onClick={() => setView("config")}
-          className={view === "config" ? "active" : ""}
-        >
-          Config
-        </button>
-      </nav>
-    </div>
-  );
+            <footer>
+                <p>Estado del Servidor: <span style={{ color: statusColor, fontWeight: 'bold' }}>{serverStatus}</span></p>
+            </footer>
+        </div>
+    );
 }
 
 export default App;
