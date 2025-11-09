@@ -84,6 +84,7 @@ pip install -r requirements.txt
 # Run the app
 python main.py
 Once running, open http://localhost:5000 to view the demo UI.
+```
 
 💱 Example Use Case
 Goal: Send $100 USD to a recipient using MXN, selecting the optimal route.
@@ -95,18 +96,6 @@ Flask backend checks simulated FX data (e.g., USD→EUR→MXN vs USD→MXN).
 System executes the route with the best conversion rate and lowest cost.
 
 Transaction logs are updated and displayed in UI.
-```
-
-🧭 Roadmap
- Integrate real-time exchange rate API (e.g., Open Exchange Rates, Banxico API).
-
- Implement GNAP authorization flow for secure transactions.
-
- Add persistent database (SQLite/PostgreSQL).
-
- Build mobile APK version via Kivy + Buildozer.
-
- Connect with STP sandbox for real-world testing.
 
 👥 Authors
 Pythonistas Team
@@ -122,13 +111,12 @@ This project is currently shared under the MIT License — feel free to fork, le
 🌐 References
 
 Frankfurter Exchange Rate API
-
 Open Payments Overview
-
 Interledger Protocol
 
 
 🧩 Pythonistas Interledger: building open, inclusive, and borderless payments from Mexico to the world.
 
 ---
+
 
