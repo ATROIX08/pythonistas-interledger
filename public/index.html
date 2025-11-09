@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enviar Pago - Interledger</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>');
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.1);
+            padding: 50px;
+            max-width: 1400px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 48px;
+            margin-bottom: 14px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 18px;
+            padding: 26px;
+            margin-bottom: 30px;
+            border-left: 6px solid #667eea;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .status-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-card h3 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+        }
+
+        .status-card p {
+            color: #4a5568;
+            font-size: 15px;
+            word-break: break-all;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #2d3748;
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 17px;
+            letter-spacing: 0.3px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 16px 20px;
+            border: 3px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 17px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            background: #f7fafc;
+            font-weight: 500;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 5px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .form-group input:hover,
+        .form-group textarea:hover,
+        .form-group select:hover {
+            border-color: #cbd5e0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group small {
+            display: block;
+            color: #999;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 22px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300%;
+            height: 300%;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 18px 45px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .btn:disabled {
+            background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-details {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .result-details p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .result-details strong {
+            color: #333;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .emoji {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .quote-comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .quote-comparison-table th,
+        .quote-comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .quote-comparison-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .quote-comparison-table td {
+            font-size: 13px;
+            color: #666;
+            vertical-align: middle;
+        }
+        
+        .quote-comparison-table td small {
+            font-size: 11px;
+        }
+
+        .quote-comparison-table tr.best-option {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .quote-comparison-table tr.best-option td {
+            color: #155724;
+            font-weight: 600;
+        }
+
+        .best-badge {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .quote-comparison-table tr:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .quote-comparison-table tr.best-option:hover {
+            background-color: #c3e6cb;
+        }
+
+        .quote-comparison-table tr.selected {
+            outline: 3px solid #667eea;
+            outline-offset: -3px;
+        }
+
+        .wallet-url-short {
+            font-family: monospace;
+            font-size: 12px;
+            color: #764ba2;
+        }
+
+        .error-row {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading-spinner-small {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e0e0e0;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Estilos para Matriz de Optimización */
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+
+        .matrix-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            border: 1px solid #5568d3;
+        }
+
+        .matrix-table th.corner {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .matrix-table th.row-header {
+            background: #667eea;
+            color: white;
+            text-align: left;
+            padding-left: 15px;
+        }
+
+        .matrix-table td {
+            border: 1px solid #e0e0e0;
+            padding: 10px 8px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .matrix-table td.row-label {
+            background: #f8f9fa;
+            font-weight: 600;
+            text-align: left;
+            padding-left: 15px;
+            color: #667eea;
+        }
+
+        .matrix-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .matrix-cell-efficiency {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .matrix-cell-details {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .matrix-cell-best {
+            background: #d4edda !important;
+            border: 3px solid #28a745 !important;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .matrix-cell-excellent {
+            background: #e7f9ed;
+        }
+
+        .matrix-cell-good {
+            background: #fff9e6;
+        }
+
+        .matrix-cell-poor {
+            background: #ffe6e6;
+        }
+
+        .matrix-cell-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .best-route-banner {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .best-route-banner h3 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .best-route-path {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="emoji">💸</div>
+            <h1>Enviar Pago</h1>
+            <p>Envía pagos usando Interledger</p>
+            <div style="margin-top: 22px; padding: 20px 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 18px; font-size: 17px; box-shadow: 0 8px 28px rgba(40, 167, 69, 0.5); font-weight: 600; letter-spacing: 0.3px; animation: pulse 2s ease-in-out infinite;">
+                <span style="font-size: 24px;">✨</span> <strong style="font-weight: 800; font-size: 19px;">NUEVO:</strong> Busca por <strong>humberto_wallet</strong> para ver todas sus wallets reales
+            </div>
+            <style>
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); box-shadow: 0 8px 28px rgba(40, 167, 69, 0.5); }
+                    50% { transform: scale(1.03); box-shadow: 0 12px 40px rgba(40, 167, 69, 0.6); }
+                }
+            </style>
+        </div>
+
+        <div class="status-card" id="walletStatus">
+            <h3>Estado del Servidor</h3>
+            <p>Cargando...</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <div class="form-group" style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 20px;">
+            <label style="display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+                <input type="checkbox" id="matrixMode" style="width: 20px; height: 20px;">
+                <span style="font-size: 16px; font-weight: 600;">
+                    📊 Modo Matriz de Optimización
+                </span>
+            </label>
+            <small style="display: block; margin-top: 5px; color: #666;">
+                Activa para comparar TODAS tus cuentas vs TODAS las wallets destino y encontrar la ruta óptima absoluta
+            </small>
+            
+            <div id="objectiveSelector" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 2px solid #dee2e6;">
+                <label for="optimizationObjective" style="font-weight: 600; color: #495057; display: block; margin-bottom: 10px;">
+                    🎯 Objetivo de Optimización
+                </label>
+                <select id="optimizationObjective" class="input-field" style="max-width: 500px; margin: 0 auto;">
+                    <option value="roundtrip">🔄 Roundtrip (Maximizar ROI ida-y-vuelta)</option>
+                    <option value="max_rate">📈 Max Rate (Maximizar tasa de conversión)</option>
+                    <option value="min_cost">💰 Min Cost (Minimizar costo por unidad destino)</option>
+                </select>
+                <p style="font-size: 11px; color: #666; margin-top: 10px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <strong>Roundtrip:</strong> Ideal si planeas volver a tu moneda original | 
+                    <strong>Max Rate:</strong> Obtén más unidades de destino | 
+                    <strong>Min Cost:</strong> Paga menos por cada unidad destino
+                </p>
+            </div>
+        </div>
+
+        <form id="paymentForm">
+            <div class="form-group" id="senderWalletGroup">
+                <label for="senderWallet">💳 Cuenta Emisora *</label>
+                <select id="senderWallet" name="senderWallet" required>
+                    <option value="">Selecciona una cuenta...</option>
+                </select>
+                <small>Elige desde qué cuenta enviarás el pago</small>
+            </div>
+
+            <!-- Nueva sección: Buscador de usuarios por nombre público -->
+            <div class="form-group" style="background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%); padding: 30px; border-radius: 20px; border-left: 6px solid #28a745; box-shadow: 0 8px 24px rgba(40, 167, 69, 0.15); transition: all 0.3s ease;">
+                <label style="font-weight: 800; color: #2d3748; display: flex; align-items: center; gap: 12px; font-size: 20px; margin-bottom: 18px;">
+                    <span style="font-size: 32px; animation: bounce 2s ease-in-out infinite;">👤</span>
+                    <span style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                        Buscar Destinatario
+                    </span>
+                </label>
+                <div style="display: flex; gap: 14px; margin-top: 14px; flex-wrap: wrap;">
+                    <input 
+                        type="text" 
+                        id="searchPublicName" 
+                        placeholder="Escribe: humberto_wallet"
+                        style="flex: 1; min-width: 250px; padding: 18px 24px; border: 3px solid #e2e8f0; border-radius: 16px; font-size: 18px; font-weight: 600; background: white; transition: all 0.3s ease; box-shadow: 0 3px 10px rgba(0,0,0,0.08);"
+                        onfocus="this.style.borderColor='#28a745'; this.style.boxShadow='0 0 0 5px rgba(40, 167, 69, 0.1), 0 6px 20px rgba(0,0,0,0.1)'; this.style.transform='translateY(-2px)'"
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='0 3px 10px rgba(0,0,0,0.08)'; this.style.transform='translateY(0)'"
+                    >
+                    <button 
+                        type="button" 
+                        id="btnSearchUser" 
+                        style="padding: 18px 36px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 16px; font-size: 19px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 8px 24px rgba(40, 167, 69, 0.5); letter-spacing: 0.5px; white-space: nowrap;"
+                        onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 14px 36px rgba(40, 167, 69, 0.6)'"
+                        onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 24px rgba(40, 167, 69, 0.5)'"
+                    >
+                        🔍 Buscar
+                    </button>
+                    <button 
+                        type="button" 
+                        id="btnShowRegistered" 
+                        style="padding: 18px 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 16px; font-size: 19px; font-weight: 800; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5); letter-spacing: 0.5px; white-space: nowrap;"
+                        onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 14px 36px rgba(102, 126, 234, 0.6)'"
+                        onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 24px rgba(102, 126, 234, 0.5)'"
+                    >
+                        📋 Ver Registrados
+                    </button>
+                </div>
+                <small style="display: block; margin-top: 14px; color: #4a5568; font-size: 15px; font-weight: 500; line-height: 1.6;">
+                    💡 Busca <strong>humberto_wallet</strong> para ver todas las wallets reales
+                </small>
+                
+                <!-- Resultados de búsqueda -->
+                <div id="searchResults" style="display: none; margin-top: 15px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #28a745;"></div>
+                
+                <!-- Lista de wallets registradas -->
+                <div id="registeredWalletsList" style="display: none; margin-top: 15px; max-height: 300px; overflow-y: auto;"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="receivingWallets">URLs de Wallets Destino * (máximo 5)</label>
+                <textarea 
+                    id="receivingWallets" 
+                    name="receivingWallets" 
+                    placeholder="https://ilp.interledger-test.dev/wallet1&#10;https://ilp.interledger-test.dev/wallet2&#10;https://ilp.interledger-test.dev/wallet3&#10;&#10;O busca por nombre público arriba ☝️"
+                    rows="5"
+                    required
+                ></textarea>
+                <small>Ingresa una o varias URLs (una por línea) para comparar tipos de cambio y elegir la mejor opción</small>
+            </div>
+
+            <div class="form-group">
+                <label for="amount">Monto a Enviar *</label>
+                <input 
+                    type="number" 
+                    id="amount" 
+                    name="amount" 
+                    placeholder="10" 
+                    min="0.01"
+                    step="0.01"
+                    required
+                >
+                <small>Monto en tu moneda. Ej: 10.00</small>
+            </div>
+
+            <div id="quotePreview" class="status-card" style="display: none; border-left-color: #28a745;">
+                <h3>📊 Comparador de Cotizaciones</h3>
+                <div id="quotePreviewContent">
+                    <p>Cargando...</p>
+                </div>
+            </div>
+            
+            <input type="hidden" id="selectedWalletUrl" name="selectedWalletUrl">
+
+            <div class="form-group">
+                <label for="description">Descripción (opcional)</label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    placeholder="Pago por servicios..."
+                ></textarea>
+                <small>Una nota sobre este pago</small>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Enviar Pago
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Procesando pago...</p>
+        </div>
+
+        <div class="footer">
+            <p>Powered by Interledger Open Payments</p>
+        </div>
+    </div>
+
+    <script>
+        // Variable global para almacenar wallets disponibles
+        let availableWallets = [];
+
+        // Cargar wallets disponibles
+        async function loadAvailableWallets() {
+            try {
+                const response = await fetch('/api/wallets');
+                const data = await response.json();
+                
+                if (data.success && data.wallets) {
+                    availableWallets = data.wallets.filter(w => !w.error);
+                    
+                    // Llenar el selector
+                    const senderWalletSelect = document.getElementById('senderWallet');
+                    senderWalletSelect.innerHTML = '<option value="">Selecciona una cuenta...</option>';
+                    
+                    availableWallets.forEach(wallet => {
+                        const option = document.createElement('option');
+                        option.value = wallet.id;
+                        option.textContent = `💳 ${wallet.name} (${wallet.assetCode}) - ${wallet.url.split('/').pop()}`;
+                        option.setAttribute('data-asset', wallet.assetCode);
+                        option.setAttribute('data-scale', wallet.assetScale);
+                        senderWalletSelect.appendChild(option);
+                    });
+                    
+                    // Seleccionar la primera por defecto
+                    if (availableWallets.length > 0) {
+                        senderWalletSelect.value = availableWallets[0].id;
+                    }
+                    
+                    // Actualizar estado del servidor
+                    document.getElementById('walletStatus').innerHTML = `
+                        <h3>💼 Cuentas Disponibles</h3>
+                        <p><strong>✅ ${availableWallets.length} cuenta(s) configurada(s)</strong></p>
+                        ${availableWallets.map(w => `<p>• ${w.name}: ${w.assetCode}</p>`).join('')}
+                    `;
+                } else {
+                    throw new Error('No se pudieron cargar las wallets');
+                }
+            } catch (error) {
+                console.error('Error cargando wallets:', error);
+                document.getElementById('walletStatus').innerHTML = `
+                    <h3>Estado del Servidor</h3>
+                    <p><strong>❌ Error de conexión</strong></p>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        // ===== FUNCIONES PARA BÚSQUEDA DE USUARIOS POR NOMBRE PÚBLICO =====
+        
+        // Buscar usuario por nombre público
+        async function searchUserByPublicName(publicName) {
+            try {
+                // Primero intentar buscar como public_name
+                const response = await fetch(`/api/user/${encodeURIComponent(publicName)}`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    return { success: true, data: data.data };
+                } else {
+                    // Si no se encuentra, intentar buscar como owner
+                    try {
+                        const ownerResponse = await fetch(`/api/wallets-by-owner/${encodeURIComponent(publicName)}`);
+                        const ownerData = await ownerResponse.json();
+                        
+                        if (ownerResponse.ok && ownerData.success) {
+                            return { 
+                                success: true, 
+                                isOwner: true,
+                                owner: publicName,
+                                wallets: ownerData.wallets,
+                                count: ownerData.count
+                            };
+                        }
+                    } catch (e) {
+                        console.log('No es un owner:', e);
+                    }
+                    
+                    return { success: false, error: data.error || 'Usuario no encontrado' };
+                }
+            } catch (error) {
+                return { success: false, error: 'Error de conexión: ' + error.message };
+            }
+        }
+        
+        // Obtener lista de wallets registradas
+        async function getRegisteredWallets() {
+            try {
+                const response = await fetch('/api/wallets-db');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    return { success: true, wallets: data.wallets };
+                } else {
+                    return { success: false, error: data.error || 'Error al obtener wallets' };
+                }
+            } catch (error) {
+                return { success: false, error: 'Error de conexión: ' + error.message };
+            }
+        }
+        
+        // Agregar wallet URL al campo de destino
+        function addWalletUrlToDestination(walletUrl) {
+            const receivingWalletsField = document.getElementById('receivingWallets');
+            const currentValue = receivingWalletsField.value.trim();
+            
+            // Verificar si la URL ya está en el campo
+            const lines = currentValue.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            if (lines.includes(walletUrl)) {
+                showAlert('⚠️ Esta wallet ya está en la lista de destinos', 'info');
+                return;
+            }
+            
+            // Agregar la URL
+            if (currentValue.length > 0) {
+                receivingWalletsField.value = currentValue + '\n' + walletUrl;
+            } else {
+                receivingWalletsField.value = walletUrl;
+            }
+            
+            // Trigger del evento input para actualizar cotizaciones
+            receivingWalletsField.dispatchEvent(new Event('input'));
+        }
+        
+        // Mostrar resultados de búsqueda
+        async function displaySearchResult(result) {
+            const searchResults = document.getElementById('searchResults');
+            
+            // Si es un owner (como humberto_wallet), mostrar todas sus wallets
+            if (result.success && result.isOwner) {
+                let html = `
+                    <div style="padding: 24px; background: white; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); border: 3px solid #28a745;">
+                        <h4 style="margin: 0 0 16px 0; color: #28a745; font-size: 26px; font-weight: 800; display: flex; align-items: center; gap: 12px;">
+                            <span style="font-size: 36px; animation: bounce 1s ease-in-out infinite;">✅</span>
+                            ${result.owner}
+                        </h4>
+                        <p style="margin: 0 0 20px 0; font-size: 18px; color: #4a5568; font-weight: 600;">
+                            Este usuario tiene <strong style="color: #28a745; font-size: 22px;">${result.count}</strong> wallets registradas:
+                        </p>
+                        <div style="display: grid; gap: 14px; margin-bottom: 24px;">
+                `;
+                
+                result.wallets.forEach((wallet, index) => {
+                    const shortName = wallet.wallet_url.split('/').pop();
+                    html += `
+                        <div style="padding: 16px; background: linear-gradient(135deg, #f0fff4 0%, #e6fffa 100%); border-radius: 12px; border-left: 5px solid #28a745; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; box-shadow: 0 3px 10px rgba(40, 167, 69, 0.15); animation: slideIn 0.3s ease-out ${index * 0.1}s backwards;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 800; color: #2d3748; font-size: 18px; margin-bottom: 6px;">
+                                    🔗 ${shortName}
+                                </div>
+                                <div style="font-size: 13px; color: #718096; font-family: 'Courier New', monospace; font-weight: 600;">
+                                    ${wallet.wallet_url}
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                onclick="addWalletUrlToDestination('${wallet.wallet_url}')"
+                                style="padding: 12px 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4); white-space: nowrap;"
+                                onmouseover="this.style.transform='translateY(-3px) scale(1.05)'; this.style.boxShadow='0 8px 20px rgba(40, 167, 69, 0.5)'"
+                                onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 4px 12px rgba(40, 167, 69, 0.4)'"
+                            >
+                                ➕ Agregar
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                        <button 
+                            type="button"
+                            onclick="addAllHumbertoWallets()"
+                            style="width: 100%; padding: 20px 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 14px; font-size: 20px; font-weight: 800; cursor: pointer; transition: all 0.3s; box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5); letter-spacing: 0.5px; position: relative; overflow: hidden;"
+                            onmouseover="this.style.transform='translateY(-4px) scale(1.02)'; this.style.boxShadow='0 14px 36px rgba(102, 126, 234, 0.6)'"
+                            onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 24px rgba(102, 126, 234, 0.5)'"
+                        >
+                            <span style="position: relative; z-index: 1;">📦 Agregar TODAS las ${result.count} Wallets</span>
+                        </button>
+                        <div style="margin-top: 18px; padding: 16px; background: linear-gradient(135deg, #e7f3ff 0%, #e1f5fe 100%); border-left: 5px solid #2196F3; border-radius: 10px; box-shadow: 0 3px 10px rgba(33, 150, 243, 0.15);">
+                            <p style="margin: 0; font-size: 15px; color: #1565C0; line-height: 1.7; font-weight: 600;">
+                                💡 <strong style="font-size: 17px;">Tip:</strong> Agrega todas las wallets para que el sistema compare automáticamente cuál tiene la mejor tasa de cambio.
+                            </p>
+                        </div>
+                    </div>
+                    <style>
+                        @keyframes slideIn {
+                            from {
+                                opacity: 0;
+                                transform: translateX(-20px);
+                            }
+                            to {
+                                opacity: 1;
+                                transform: translateX(0);
+                            }
+                        }
+                        @keyframes bounce {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-8px); }
+                        }
+                    </style>
+                `;
+                
+                searchResults.innerHTML = html;
+                searchResults.style.display = 'block';
+                return;
+            }
+            
+            if (result.success) {
+                const data = result.data;
+                const walletInfo = data.walletInfo;
+                
+                // Verificar si es una wallet de Humberto (buscar por owner o por nombre)
+                const isHumbertoWallet = data.publicName.toLowerCase().includes('humberto');
+                
+                let html = `
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <h4 style="margin: 0 0 10px 0; color: #28a745; font-size: 18px;">
+                                ✅ Usuario encontrado: ${data.publicName}
+                                ${isHumbertoWallet ? '<span style="background: #28a745; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; margin-left: 8px;">REAL</span>' : ''}
+                            </h4>
+                            <p style="margin: 5px 0; font-size: 14px; color: #666; word-break: break-all;">
+                                <strong>URL:</strong> ${data.walletUrl}
+                            </p>
+                `;
+                
+                if (walletInfo) {
+                    html += `
+                        <p style="margin: 5px 0; font-size: 14px; color: #666;">
+                            <strong>Moneda:</strong> ${walletInfo.assetCode} (scale: ${walletInfo.assetScale})
+                        </p>
+                    `;
+                }
+                
+                html += `
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button 
+                                type="button"
+                                onclick="addWalletUrlToDestination('${data.walletUrl}')"
+                                style="padding: 12px 24px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; white-space: nowrap;"
+                            >
+                                ➕ Agregar Esta
+                            </button>
+                `;
+                
+                // Si es una wallet de Humberto, agregar botón para cargar todas
+                if (isHumbertoWallet) {
+                    html += `
+                        <button 
+                            type="button"
+                            onclick="addAllHumbertoWallets()"
+                            style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; white-space: nowrap;"
+                        >
+                            📦 Agregar Todas (5)
+                        </button>
+                    `;
+                    
+                    html += `
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 12px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                        <p style="margin: 0; font-size: 13px; color: #1565C0;">
+                            💡 <strong>Esta es una de las 5 wallets reales de Humberto.</strong> 
+                            Puedes agregar solo esta o todas sus wallets para comparar tipos de cambio entre ellas.
+                        </p>
+                    </div>
+                    `;
+                } else {
+                    html += `
+                        </div>
+                    </div>
+                    `;
+                }
+                
+                searchResults.innerHTML = html;
+                searchResults.style.display = 'block';
+            } else {
+                searchResults.innerHTML = `
+                    <p style="margin: 0; color: #dc3545; font-size: 14px;">
+                        ❌ ${result.error}
+                    </p>
+                `;
+                searchResults.style.display = 'block';
+            }
+        }
+        
+        // Cargar todas las wallets de un owner
+        async function loadOwnerWallets(owner) {
+            try {
+                const response = await fetch(`/api/wallets-by-owner/${encodeURIComponent(owner)}`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    return { success: true, wallets: data.wallets, count: data.count };
+                } else {
+                    return { success: false, error: data.error || 'No se encontraron wallets' };
+                }
+            } catch (error) {
+                return { success: false, error: 'Error de conexión: ' + error.message };
+            }
+        }
+        
+        // Agregar todas las wallets de Humberto
+        async function addAllHumbertoWallets() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner-small"></span> Cargando...';
+            
+            const result = await loadOwnerWallets('humberto_wallet');
+            
+            if (result.success) {
+                const receivingWalletsField = document.getElementById('receivingWallets');
+                const urls = result.wallets.map(w => w.wallet_url).join('\n');
+                receivingWalletsField.value = urls;
+                
+                // Trigger del evento input para actualizar cotizaciones
+                receivingWalletsField.dispatchEvent(new Event('input'));
+                
+                showAlert(`✅ ${result.count} wallets de Humberto agregadas al campo de destino`, 'success');
+            } else {
+                showAlert('❌ Error al cargar wallets: ' + result.error, 'error');
+            }
+            
+            btn.disabled = false;
+            btn.innerHTML = '📦 Agregar Todas';
+        }
+        
+        // Mostrar lista de wallets registradas
+        function displayRegisteredWallets(wallets) {
+            const listContainer = document.getElementById('registeredWalletsList');
+            
+            if (wallets.length === 0) {
+                listContainer.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: #666; background: white; border-radius: 8px;">
+                        <p style="margin: 0;">No hay wallets registradas en la base de datos</p>
+                    </div>
+                `;
+                listContainer.style.display = 'block';
+                return;
+            }
+            
+            // Separar wallets reales de dummy
+            const realWallets = wallets.filter(w => !w.is_dummy);
+            const dummyWallets = wallets.filter(w => w.is_dummy);
+            
+            // Agrupar wallets reales por owner
+            const walletsByOwner = {};
+            realWallets.forEach(wallet => {
+                const owner = wallet.owner || 'Sin owner';
+                if (!walletsByOwner[owner]) {
+                    walletsByOwner[owner] = [];
+                }
+                walletsByOwner[owner].push(wallet);
+            });
+            
+            let html = `
+                <div style="background: white; border-radius: 8px; padding: 15px;">
+                    <h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">
+                        📋 Wallets Registradas (${wallets.length})
+                    </h4>
+                    <div style="display: grid; gap: 15px;">
+            `;
+            
+            // Mostrar wallets reales por owner
+            for (const [owner, ownerWallets] of Object.entries(walletsByOwner)) {
+                html += `
+                    <div style="border: 2px solid #28a745; border-radius: 8px; padding: 12px; background: #f0fff4;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                            <div style="font-weight: 700; color: #28a745; font-size: 15px;">
+                                ✅ ${owner} (${ownerWallets.length} ${ownerWallets.length === 1 ? 'wallet' : 'wallets'} reales)
+                            </div>
+                            ${owner === 'humberto_wallet' ? `
+                                <button 
+                                    type="button"
+                                    onclick="addAllHumbertoWallets()"
+                                    style="padding: 6px 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;"
+                                >
+                                    📦 Agregar Todas
+                                </button>
+                            ` : ''}
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                `;
+                
+                ownerWallets.forEach(wallet => {
+                    // Extraer nombre corto de la URL
+                    const shortName = wallet.wallet_url.split('/').pop();
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #28a745;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #333; margin-bottom: 3px; font-size: 14px;">
+                                    🔗 ${shortName}
+                                </div>
+                                <div style="font-size: 11px; color: #666; word-break: break-all; font-family: monospace;">
+                                    ${wallet.wallet_url}
+                                </div>
+                            </div>
+                            <button 
+                                type="button"
+                                onclick="addWalletUrlToDestination('${wallet.wallet_url}')"
+                                style="padding: 6px 12px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; margin-left: 10px;"
+                            >
+                                ➕
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Mostrar wallets dummy
+            if (dummyWallets.length > 0) {
+                html += `
+                    <div style="border: 2px solid #ffc107; border-radius: 8px; padding: 12px; background: #fffbf0;">
+                        <div style="font-weight: 700; color: #856404; font-size: 15px; margin-bottom: 10px;">
+                            ⚠️ Wallets Dummy (Solo para ejemplo - ${dummyWallets.length})
+                        </div>
+                        <div style="display: grid; gap: 8px;">
+                `;
+                
+                dummyWallets.forEach(wallet => {
+                    html += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: white; border-radius: 6px; border-left: 3px solid #ffc107; opacity: 0.7;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #666; margin-bottom: 3px; font-size: 14px;">
+                                    👤 ${wallet.public_name}
+                                </div>
+                                <div style="font-size: 11px; color: #999; word-break: break-all; font-family: monospace;">
+                                    ${wallet.wallet_url}
+                                </div>
+                            </div>
+                            <span style="padding: 6px 12px; background: #ffc107; color: #856404; border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap; margin-left: 10px;">
+                                DUMMY
+                            </span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                        <div style="margin-top: 10px; padding: 8px; background: rgba(255, 193, 7, 0.1); border-radius: 4px;">
+                            <p style="margin: 0; font-size: 11px; color: #856404;">
+                                ℹ️ Estas wallets son solo de ejemplo. Las wallets reales de Humberto están arriba.
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            listContainer.innerHTML = html;
+            listContainer.style.display = 'block';
+        }
+        
+        // Event listener para el botón de búsqueda
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnSearchUser = document.getElementById('btnSearchUser');
+            const btnShowRegistered = document.getElementById('btnShowRegistered');
+            const searchPublicName = document.getElementById('searchPublicName');
+            
+            // Buscar usuario
+            btnSearchUser.addEventListener('click', async () => {
+                const publicName = searchPublicName.value.trim();
+                
+                if (!publicName) {
+                    showAlert('⚠️ Por favor ingresa un nombre público', 'error');
+                    return;
+                }
+                
+                btnSearchUser.disabled = true;
+                btnSearchUser.innerHTML = '<span class="loading-spinner-small"></span> Buscando...';
+                
+                const result = await searchUserByPublicName(publicName);
+                displaySearchResult(result);
+                
+                btnSearchUser.disabled = false;
+                btnSearchUser.innerHTML = '🔍 Buscar';
+            });
+            
+            // Buscar al presionar Enter en el campo de búsqueda
+            searchPublicName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    btnSearchUser.click();
+                }
+            });
+            
+            // Ver wallets registradas
+            btnShowRegistered.addEventListener('click', async () => {
+                const registeredWalletsList = document.getElementById('registeredWalletsList');
+                
+                // Toggle: si ya está visible, ocultarlo
+                if (registeredWalletsList.style.display === 'block') {
+                    registeredWalletsList.style.display = 'none';
+                    return;
+                }
+                
+                btnShowRegistered.disabled = true;
+                btnShowRegistered.innerHTML = '<span class="loading-spinner-small"></span> Cargando...';
+                
+                const result = await getRegisteredWallets();
+                
+                if (result.success) {
+                    displayRegisteredWallets(result.wallets);
+                } else {
+                    showAlert('❌ Error al cargar wallets: ' + result.error, 'error');
+                }
+                
+                btnShowRegistered.disabled = false;
+                btnShowRegistered.innerHTML = '📋 Ver Registrados';
+            });
+        });
+        
+        // Función para mostrar alertas
+        function showAlert(message, type, details = null) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now();
+            
+            let detailsHtml = '';
+            if (details) {
+                detailsHtml = '<div class="result-details">';
+                for (const [key, value] of Object.entries(details)) {
+                    detailsHtml += `<p><strong>${key}:</strong> ${JSON.stringify(value)}</p>`;
+                }
+                detailsHtml += '</div>';
+            }
+            
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type}">
+                    ${message}
+                    ${detailsHtml}
+                </div>
+            `;
+            
+            alertContainer.innerHTML = alertHtml;
+            document.getElementById(alertId).classList.add('show');
+            
+            // Auto-ocultar después de 10 segundos si es un mensaje de éxito
+            if (type === 'success') {
+                setTimeout(() => {
+                    const alert = document.getElementById(alertId);
+                    if (alert) {
+                        alert.classList.remove('show');
+                    }
+                }, 10000);
+            }
+        }
+
+        // Variables globales para el popup
+        let approvalPopup = null;
+        let quoteTimeout = null;
+        
+        // Función para obtener cotizaciones (modo simple o matriz)
+        async function fetchQuotePreview() {
+            const receivingWalletsText = document.getElementById('receivingWallets').value.trim();
+            const amount = document.getElementById('amount').value;
+            const matrixMode = document.getElementById('matrixMode').checked;
+            const senderWalletId = document.getElementById('senderWallet').value;
+            const quotePreview = document.getElementById('quotePreview');
+            const quotePreviewContent = document.getElementById('quotePreviewContent');
+            
+            // Validaciones según el modo
+            if (!receivingWalletsText || !amount || parseFloat(amount) <= 0) {
+                quotePreview.style.display = 'none';
+                return;
+            }
+            
+            // En modo simple, necesitamos la wallet emisora
+            if (!matrixMode && !senderWalletId) {
+                quotePreview.style.display = 'none';
+                return;
+            }
+            
+            // Si está en modo matriz, usar el endpoint de matriz
+            if (matrixMode) {
+                await fetchOptimizationMatrix();
+                return;
+            }
+            
+            // Dividir las URLs por línea y filtrar líneas vacías
+            const receivingWallets = receivingWalletsText
+                .split('\n')
+                .map(url => url.trim())
+                .filter(url => url.length > 0)
+                .slice(0, 5); // Máximo 5
+            
+            if (receivingWallets.length === 0) {
+                quotePreview.style.display = 'none';
+                return;
+            }
+            
+            // Validar que todas sean URLs válidas
+            const validUrls = [];
+            for (const url of receivingWallets) {
+                try {
+                    new URL(url);
+                    validUrls.push(url);
+                } catch {
+                    // Ignorar URLs inválidas
+                }
+            }
+            
+            if (validUrls.length === 0) {
+                quotePreview.style.display = 'none';
+                return;
+            }
+            
+            // Mostrar el card con loading
+            quotePreview.style.display = 'block';
+            quotePreviewContent.innerHTML = `
+                <p style="color: #666; text-align: center;">
+                    <span class="loading-spinner-small"></span>
+                    Comparando ${validUrls.length} ${validUrls.length === 1 ? 'wallet' : 'wallets'}...
+                </p>
+            `;
+            
+            try {
+                const response = await fetch('/api/quote-preview-multiple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        receivingWalletUrls: validUrls,
+                        amount: amount,
+                        senderWalletId: senderWalletId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const quotes = data.quotes;
+                    
+                    if (quotes.length === 0) {
+                        quotePreviewContent.innerHTML = '<p style="color: #dc3545;">❌ No se pudieron obtener cotizaciones</p>';
+                        return;
+                    }
+                    
+                    // Encontrar la mejor opción (mayor tasa = mejor conversión)
+                    let bestQuote = quotes[0];
+                    for (const quote of quotes) {
+                        if (quote.success && bestQuote.success) {
+                            if (quote.quote.rate > bestQuote.quote.rate) {
+                                bestQuote = quote;
+                            }
+                        }
+                    }
+                    
+                    // Mejor tasa para comparación
+                    const bestRate = bestQuote.success ? bestQuote.quote.rate : 0;
+                    
+                    // Construir tabla
+                    let html = `
+                        <table class="quote-comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Wallet Destino</th>
+                                    <th>Moneda</th>
+                                    <th>Recibirá</th>
+                                    <th>Tasa Efectiva</th>
+                                    <th>Costo</th>
+                                    <th>% vs Mejor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    for (const item of quotes) {
+                        const isBest = item.success && item.walletUrl === bestQuote.walletUrl;
+                        const rowClass = isBest ? 'best-option' : (item.success ? '' : 'error-row');
+                        
+                        if (item.success) {
+                            const quote = item.quote;
+                            const walletShort = item.walletUrl.split('/').pop() || item.walletUrl.substring(0, 20) + '...';
+                            const sameCurrency = quote.sameCurrency;
+                            
+                            // Calcular diferencia respecto a la mejor tasa
+                            const ratioToBest = (quote.rate / bestRate) * 100;
+                            const rateDisplay = isBest 
+                                ? '<span style="color: #28a745;">100%</span>' 
+                                : `<span style="color: ${ratioToBest >= 98 ? '#28a745' : ratioToBest >= 95 ? '#ffc107' : '#dc3545'};">${ratioToBest.toFixed(2)}%</span>`;
+                            
+                            // Color de tasa
+                            const rateColor = isBest ? '#28a745' : '#667eea';
+                            
+                            html += `
+                                <tr class="${rowClass}" data-wallet-url="${item.walletUrl}" onclick="selectWallet('${item.walletUrl}')">
+                                    <td>
+                                        <span class="wallet-url-short">${walletShort}</span>
+                                        ${isBest ? '<span class="best-badge">✓ MEJOR</span>' : ''}
+                                    </td>
+                                    <td><strong>${quote.receiveAmount.assetCode}</strong></td>
+                                    <td><strong style="font-size: 15px;">${quote.receiveAmount.value.toFixed(2)}</strong></td>
+                                    <td>
+                                        <strong style="color: ${rateColor};">
+                                            ${quote.rate.toFixed(4)}
+                                        </strong>
+                                        <br><small style="color: #999;">${quote.receiveAmount.assetCode}/${quote.debitAmount.assetCode}</small>
+                                        ${!sameCurrency ? '<br><small style="color: #666;">Inversa: ' + quote.inverseRate.toFixed(4) + '</small>' : ''}
+                                    </td>
+                                    <td>
+                                        <strong>${quote.debitAmount.value.toFixed(2)}</strong>
+                                        <br><small style="color: #999;">${quote.debitAmount.assetCode}</small>
+                                        ${quote.implicitFee > 0.01 ? '<br><small style="color: #dc3545;">Fee: ' + quote.implicitFee.toFixed(2) + '</small>' : ''}
+                                    </td>
+                                    <td>${rateDisplay}</td>
+                                </tr>
+                            `;
+                        } else {
+                            const walletShort = item.walletUrl.split('/').pop() || item.walletUrl.substring(0, 20) + '...';
+                            html += `
+                                <tr class="${rowClass}">
+                                    <td colspan="6">
+                                        <span class="wallet-url-short">${walletShort}</span>: 
+                                        <span style="color: #721c24;">${item.error}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        }
+                    }
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    
+                    // ===== COMPARACIÓN CON MERCADO =====
+                    if (data.marketComparison && data.marketComparison.count > 0) {
+                        const mc = data.marketComparison;
+                        const topMarket = mc.top;
+                        
+                        html += `
+                            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);">
+                                <h4 style="margin: 0 0 10px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="font-size: 24px;">💱</span>
+                                    COMPARACIÓN CON MERCADO (Frankfurter API)
+                                </h4>
+                                <div style="font-size: 12px; opacity: 0.9; margin-bottom: 15px;">
+                                    Comparamos las tasas de Open Payments vs las tasas reales del mercado
+                                </div>
+                                
+                                <div style="background: rgba(0,0,0,0.15); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                    <div style="font-size: 14px; margin-bottom: 8px;">
+                                        <strong>🥇 TOP: ${topMarket.pair}</strong>
+                                    </div>
+                                    <div style="font-size: 20px; margin: 10px 0;">
+                                        ${topMarket.arbitrageType === 'OP_MEJOR' 
+                                            ? '🚀 <strong>Open Payments es MEJOR</strong>' 
+                                            : '⚠️ <strong>Mercado es mejor</strong>'
+                                        }: 
+                                        <strong style="color: #ffeb3b;">${topMarket.spreadPct > 0 ? '+' : ''}${topMarket.spreadPct.toFixed(3)}%</strong>
+                                    </div>
+                                    <div style="font-size: 13px; opacity: 0.95;">
+                                        Open Payments: <strong>${topMarket.openPaymentsRate.toFixed(4)}</strong> | 
+                                        Mercado: <strong>${topMarket.marketRate.toFixed(4)}</strong>
+                                    </div>
+                                </div>
+                                
+                                ${mc.opportunities.length > 1 ? `
+                                <div style="font-size: 13px; margin-top: 15px;">
+                                    <strong>📊 Todas las comparaciones:</strong>
+                                    <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr; gap: 6px;">
+                                        ${mc.opportunities.map((opp, idx) => {
+                                            const walletShort = opp.walletUrl.split('/').pop();
+                                            return `
+                                                <div style="background: rgba(0,0,0,0.1); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                                    <span style="font-size: 12px;">
+                                                        <strong>${walletShort}</strong> (${opp.pair})
+                                                    </span>
+                                                    <span style="font-size: 12px; font-weight: bold; color: ${opp.spreadPct > 0 ? '#ffeb3b' : '#ffc107'};">
+                                                        ${opp.spreadPct > 0 ? '✅' : '❌'} ${opp.spreadPct > 0 ? '+' : ''}${opp.spreadPct.toFixed(2)}%
+                                                    </span>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div style="font-size: 11px; margin-top: 15px; opacity: 0.85; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.3);">
+                                    <strong>💡 ¿Qué significa esto?</strong><br>
+                                    ${topMarket.spreadPct > 0 
+                                        ? `Open Payments te ofrece una tasa ${topMarket.spreadPct.toFixed(3)}% <strong>MEJOR</strong> que el mercado. ¡Excelente oportunidad!`
+                                        : `El mercado ofrece una tasa ${Math.abs(topMarket.spreadPct).toFixed(3)}% mejor. Open Payments tiene comisiones más altas en esta conversión.`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    } else if (data.marketComparison && data.marketComparison.baseCurrency) {
+                        html += `
+                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #6c757d; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 13px; color: #495057;">
+                                    ℹ️ No se detectaron diferencias significativas con el mercado (spreads < 0.01%)
+                                </p>
+                            </div>
+                        `;
+                    } else if (data.marketComparison === null) {
+                        html += `
+                            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 13px; color: #856404;">
+                                    ⚠️ La moneda base (${quotes[0]?.quote?.debitAmount?.assetCode || 'N/A'}) no está soportada por la API de Frankfurter para comparación con el mercado.
+                                    <br><small>Monedas soportadas: CAD, EUR, GBP, MXN, SGD, USD, ZAR</small>
+                                </p>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `
+                        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                            <h4 style="margin: 0 0 10px 0; color: #1565C0; font-size: 14px;">
+                                📘 Comparación de Tasas de Cambio
+                            </h4>
+                            <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                                <strong>Recibirá</strong>: Monto exacto que llegará al destinatario en su moneda
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                                <strong>Tasa Efectiva</strong>: Cuántas unidades de la divisa destino recibes por cada 1 unidad de tu divisa. 
+                                Mayor tasa = mejor conversión.
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                                <strong>Costo</strong>: Lo que se debitará de tu cuenta (normalmente igual al monto solicitado, ya que fijamos el debitAmount)
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                                <strong>% vs Mejor</strong>: Qué tan buena es esta tasa comparada con la mejor disponible (100% = la mejor)
+                            </p>
+                            <p style="margin: 10px 0 0 0; font-size: 12px; color: #1565C0; font-weight: 600;">
+                                ✅ La mejor opción (verde) es la que tiene la tasa más alta
+                            </p>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 13px; color: #666; text-align: center;">
+                            💡 Haz clic en una fila para seleccionarla antes de enviar el pago
+                        </p>
+                    `;
+                    
+                    quotePreviewContent.innerHTML = html;
+                    
+                    // Seleccionar automáticamente la mejor opción
+                    if (bestQuote.success) {
+                        document.getElementById('selectedWalletUrl').value = bestQuote.walletUrl;
+                    }
+                } else {
+                    quotePreviewContent.innerHTML = `<p style="color: #dc3545;">❌ ${data.error || 'Error al obtener cotizaciones'}</p>`;
+                }
+            } catch (error) {
+                console.error('Error al obtener cotizaciones:', error);
+                quotePreviewContent.innerHTML = `<p style="color: #dc3545;">❌ Error de conexión</p>`;
+            }
+        }
+        
+        // Función para obtener y renderizar la matriz de optimización
+        async function fetchOptimizationMatrix() {
+            const receivingWalletsText = document.getElementById('receivingWallets').value.trim();
+            const amount = document.getElementById('amount').value;
+            const senderWalletId = document.getElementById('senderWallet').value;
+            const quotePreview = document.getElementById('quotePreview');
+            const quotePreviewContent = document.getElementById('quotePreviewContent');
+            
+            // Obtener URLs de destino
+            const receivingWallets = receivingWalletsText
+                .split('\n')
+                .map(url => url.trim())
+                .filter(url => url.length > 0)
+                .slice(0, 10); // Máximo 10 destinos
+            
+            // Validar que haya al menos una URL de destino
+            if (receivingWallets.length === 0) {
+                quotePreview.style.display = 'block';
+                quotePreviewContent.innerHTML = `
+                    <p style="color: #dc3545; text-align: center;">
+                        ❌ Por favor ingresa al menos una URL de wallet destino para generar la matriz
+                    </p>
+                `;
+                return;
+            }
+            
+            const senderCount = senderWalletId ? 1 : availableWallets.length;
+            const senderText = senderWalletId 
+                ? ` (desde ${availableWallets.find(w => w.id === senderWalletId)?.name || 'N/A'})`
+                : ' (desde todas tus cuentas)';
+            
+            // Mostrar loading
+            quotePreview.style.display = 'block';
+            quotePreviewContent.innerHTML = `
+                <p style="color: #666; text-align: center;">
+                    <span class="loading-spinner-small"></span>
+                    Generando matriz de tipos de cambio cruzados${senderText}...<br>
+                    <small>Evaluando ${senderCount} ${senderCount === 1 ? 'cuenta' : 'cuentas'} × ${receivingWallets.length} ${receivingWallets.length === 1 ? 'destino' : 'destinos'} = ${senderCount * receivingWallets.length} rutas</small>
+                </p>
+            `;
+            
+            // Obtener objetivo de optimización
+            const objective = document.getElementById('optimizationObjective').value;
+            
+            try {
+                const response = await fetch('/api/optimization-matrix', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        receivingWalletUrls: receivingWallets,
+                        amount: amount,
+                        senderWalletId: senderWalletId || null,
+                        objective: objective
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    renderOptimizationMatrix(data);
+                } else {
+                    quotePreviewContent.innerHTML = `<p style="color: #dc3545;">❌ ${data.error || 'Error al generar matriz'}</p>`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                quotePreviewContent.innerHTML = `<p style="color: #dc3545;">❌ Error de conexión</p>`;
+            }
+        }
+        
+        // Renderizar la matriz de optimización
+        function renderOptimizationMatrix(data) {
+            const quotePreviewContent = document.getElementById('quotePreviewContent');
+            const { matrix, bestRoute, summary } = data;
+            
+            // Obtener configuración y objetivo
+            const objective = data.config?.objective || 'roundtrip';
+            const epsilonBps = data.config?.epsilonBps || 5;
+            
+            // Banner de mejor ruta según objetivo
+            let html = '';
+            if (bestRoute) {
+                const isArbitrage = availableWallets.some(w => w.url === bestRoute.receiverUrl);
+                
+                let objectiveLabel = '';
+                let scoreDisplay = '';
+                
+                switch (objective) {
+                    case 'roundtrip':
+                        objectiveLabel = '🔄 MEJOR RUTA (Roundtrip ROI)';
+                        scoreDisplay = `ROI ida-y-vuelta: <strong>${bestRoute.roiToSenderPct?.toFixed(3)}%</strong>`;
+                        break;
+                    case 'max_rate':
+                        objectiveLabel = '📈 MEJOR RUTA (Max Rate)';
+                        scoreDisplay = `Tasa: <strong>${bestRoute.rate.toFixed(4)} ${bestRoute.receiverAsset}/${bestRoute.senderAsset}</strong>`;
+                        break;
+                    case 'min_cost':
+                        objectiveLabel = '💰 MEJOR RUTA (Min Cost)';
+                        scoreDisplay = `Costo por destino: <strong>${bestRoute.costPerDestUnit.toFixed(4)} ${bestRoute.senderAsset}/${bestRoute.receiverAsset}</strong>`;
+                        break;
+                }
+                
+                html += `
+                    <div class="best-route-banner">
+                        <h3>${objectiveLabel}</h3>
+                        <div style="font-size: 11px; opacity: 0.8; margin-top: -5px; margin-bottom: 10px;">
+                            Objetivo: ${objective} | Tolerancia: ${epsilonBps} bps
+                        </div>
+                        <div class="best-route-path">
+                            ${bestRoute.senderName} (${bestRoute.senderAsset}) 
+                            → 
+                            ${bestRoute.receiverShort} (${bestRoute.receiverAsset})
+                            ${isArbitrage ? '<span style="margin-left: 10px; background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 5px; font-size: 12px;">Entre tus cuentas</span>' : ''}
+                        </div>
+                        <div style="font-size: 20px; margin-top: 10px;">
+                            ${scoreDisplay}
+                        </div>
+                        <div style="font-size: 13px; margin-top: 10px; opacity: 0.9;">
+                            Enviando ${summary.amount.toFixed(2)} ${bestRoute.senderAsset} recibirás ${bestRoute.receiveValue.toFixed(2)} ${bestRoute.receiverAsset}
+                            <br>
+                            <span style="font-size: 11px;">
+                                Tasa: ${bestRoute.rate.toFixed(4)} | Costo/dest: ${bestRoute.costPerDestUnit.toFixed(4)}
+                                ${bestRoute.hasRoundTrip ? ` | ✓ ROI regreso: ${bestRoute.roiToSenderPct?.toFixed(3)}%` : ''}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Banner de arbitraje triangular
+            if (data.arbitrage && data.arbitrage.count > 0) {
+                const top = data.arbitrage.top;
+                html += `
+                    <div class="best-route-banner" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin-top: 15px;">
+                        <h3>🔄 ARBITRAJE TRIANGULAR DETECTADO</h3>
+                        <div class="best-route-path">
+                            ${top.description}
+                        </div>
+                        <div style="font-size: 24px; margin-top: 10px; color: #ffeb3b;">
+                            Ganancia: <strong>${top.profit}</strong>
+                        </div>
+                        <div style="font-size: 13px; margin-top: 10px; opacity: 0.9;">
+                            💡 Por cada ${summary.amount.toFixed(2)} ${top.cycle[0]} que conviertas siguiendo este ciclo, 
+                            obtendrás ${(summary.amount * top.product).toFixed(2)} ${top.cycle[0]} 
+                            (ganancia neta: ${(summary.amount * (top.product - 1)).toFixed(2)} ${top.cycle[0]})
+                        </div>
+                        <div style="font-size: 12px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+                            <strong>Pasos:</strong><br>
+                            1️⃣ ${top.cycle[0]} → ${top.cycle[1]}: ${Object.values(top.legs)[0].rate.toFixed(4)}<br>
+                            2️⃣ ${top.cycle[1]} → ${top.cycle[2]}: ${Object.values(top.legs)[1].rate.toFixed(4)}<br>
+                            3️⃣ ${top.cycle[2]} → ${top.cycle[3]}: ${Object.values(top.legs)[2].rate.toFixed(4)}
+                        </div>
+                        ${data.arbitrage.count > 1 ? `
+                        <div style="font-size: 11px; margin-top: 10px; opacity: 0.8;">
+                            ℹ️ Se detectaron ${data.arbitrage.count} oportunidades de arbitraje triangular en total
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            // Banner de arbitraje vs mercado
+            if (data.marketComparison && data.marketComparison.count > 0) {
+                const marketOpps = data.marketComparison.arbitrageOpportunities;
+                const topMarket = data.marketComparison.top;
+                
+                html += `
+                    <div class="best-route-banner" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); margin-top: 15px;">
+                        <h3>💱 OPORTUNIDADES DE ARBITRAJE vs MERCADO</h3>
+                        <div style="font-size: 11px; opacity: 0.9; margin-top: -5px; margin-bottom: 10px;">
+                            Comparación de tasas Open Payments vs Frankfurter API (tasas de mercado)
+                        </div>
+                        <div class="best-route-path">
+                            🥇 TOP: ${topMarket.pair} 
+                        </div>
+                        <div style="font-size: 20px; margin-top: 10px; color: #ffeb3b;">
+                            ${topMarket.arbitrageType === 'OP_MEJOR' ? '🚀 Open Payments MEJOR' : '⚠️ Mercado MEJOR'}: 
+                            <strong>${topMarket.spreadPct > 0 ? '+' : ''}${topMarket.spreadPct.toFixed(3)}%</strong>
+                        </div>
+                        <div style="font-size: 13px; margin-top: 10px; opacity: 0.9;">
+                            Tasa Open Payments: <strong>${topMarket.openPaymentsRate.toFixed(4)}</strong> | 
+                            Tasa Mercado: <strong>${topMarket.marketRate.toFixed(4)}</strong>
+                        </div>
+                        <div style="font-size: 13px; margin-top: 10px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 5px;">
+                            <strong>💡 ¿Qué significa esto?</strong><br>
+                            ${topMarket.arbitrageType === 'OP_MEJOR' 
+                                ? `Open Payments te ofrece una tasa ${topMarket.spreadPct.toFixed(3)}% MEJOR que el mercado. ¡Aprovecha esta oportunidad!`
+                                : `El mercado ofrece una tasa ${Math.abs(topMarket.spreadPct).toFixed(3)}% mejor. Considera otras plataformas.`
+                            }
+                        </div>
+                        <div style="font-size: 12px; margin-top: 10px; opacity: 0.9;">
+                            <strong>🔝 Top 10 Oportunidades:</strong>
+                            <div style="margin-top: 8px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px;">
+                                ${marketOpps.slice(0, 10).map((opp, idx) => `
+                                    <div style="background: rgba(0,0,0,0.15); padding: 5px 8px; border-radius: 4px; font-size: 11px;">
+                                        ${idx + 1}. <strong>${opp.pair}</strong>: ${opp.spreadPct > 0 ? '✅' : '❌'} ${opp.spreadPct > 0 ? '+' : ''}${opp.spreadPct.toFixed(2)}%
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; margin-top: 10px; opacity: 0.8;">
+                            ℹ️ Total de ${data.marketComparison.count} diferencias detectadas | 
+                            Monedas comparadas: ${data.marketComparison.supportedCurrencies.join(', ')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Matriz
+            html += `
+                <h4 style="margin: 20px 0 10px 0; color: #333;">
+                    📊 Matriz de Conversiones (${summary.senderWallets} ${summary.senderWallets === 1 ? 'cuenta' : 'cuentas'} × ${summary.receiverWallets} ${summary.receiverWallets === 1 ? 'destino' : 'destinos'})
+                </h4>
+                <p style="margin: 0 0 15px 0; font-size: 13px; color: #666; text-align: center;">
+                    Tasa efectiva y monto que recibirías al enviar ${summary.amount.toFixed(2)} desde cada cuenta hacia cada destino
+                </p>
+                <div style="overflow-x: auto;">
+                    <table class="matrix-table">
+                        <thead>
+                            <tr>
+                                <th class="corner">De ➡️<br>Hacia ⬇️</th>
+            `;
+            
+            // Headers de columnas (divisas destino)
+            if (matrix.length > 0 && matrix[0].routes.length > 0) {
+                matrix[0].routes.forEach(route => {
+                    html += `<th title="${route.receiverUrl}"><strong>${route.receiverAsset || '?'}</strong><br><small>${route.receiverShort}</small></th>`;
+                });
+            }
+            
+            html += `
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            // Filas (cuentas emisoras)
+            matrix.forEach(sender => {
+                html += `<tr>`;
+                html += `<td class="row-label"><strong>${sender.senderAsset || '?'}</strong><br><small>${sender.senderName}</small></td>`;
+                
+                // Celdas de rutas
+                sender.routes.forEach(route => {
+                    if (route.isDiagonal) {
+                        // Diagonal principal (misma divisa)
+                        html += `
+                            <td style="background: #f8f9fa; text-align: center; border: 2px solid #dee2e6;">
+                                <div class="matrix-cell">
+                                    <span style="font-size: 18px; font-weight: bold; color: #495057;">1:1</span>
+                                    <span class="matrix-cell-details" style="font-size: 11px; color: #6c757d;">
+                                        ${route.receiveValue.toFixed(2)} ${route.receiverAsset}
+                                    </span>
+                                    <span class="matrix-cell-details" style="font-size: 10px; color: #28a745;">
+                                        Sin comisión
+                                    </span>
+                                </div>
+                            </td>
+                        `;
+                    } else if (route.success) {
+                        const isBest = bestRoute && 
+                                     bestRoute.senderName === sender.senderName && 
+                                     bestRoute.receiverUrl === route.receiverUrl;
+                        
+                        // Determinar color basado en el objetivo de optimización
+                        let cellClass = '';
+                        let scoreRatio = 0;
+                        
+                        if (isBest) {
+                            cellClass = 'matrix-cell-best';
+                        } else if (bestRoute && !route.sameCurrency) {
+                            // Calcular score según objetivo
+                            switch (objective) {
+                                case 'roundtrip':
+                                    // Comparar ROI
+                                    if (route.hasRoundTrip && bestRoute.roiToSenderPct) {
+                                        scoreRatio = route.roiToSenderPct / bestRoute.roiToSenderPct;
+                                    } else if (!route.hasRoundTrip) {
+                                        scoreRatio = 0; // Sin regreso = muy bajo
+                                    }
+                                    break;
+                                case 'max_rate':
+                                    // Comparar tasas
+                                    scoreRatio = route.rate / bestRoute.rate;
+                                    break;
+                                case 'min_cost':
+                                    // Comparar costos (invertido: menor = mejor)
+                                    scoreRatio = bestRoute.costPerDestUnit / route.costPerDestUnit;
+                                    break;
+                            }
+                            
+                            // Asignar color según ratio
+                            if (scoreRatio >= 0.98) {
+                                cellClass = 'matrix-cell-excellent';
+                            } else if (scoreRatio >= 0.95) {
+                                cellClass = 'matrix-cell-good';
+                            } else {
+                                cellClass = 'matrix-cell-poor';
+                            }
+                        } else {
+                            // Sin referencia o misma moneda
+                            cellClass = 'matrix-cell-good';
+                        }
+                        
+                        // Construir tooltip con toda la información
+                        const tooltipParts = [
+                            `Tasa: ${route.rate.toFixed(4)} ${route.receiverAsset}/${route.senderAsset}`,
+                            `Costo/dest: ${route.costPerDestUnit.toFixed(4)} ${route.senderAsset}/${route.receiverAsset}`
+                        ];
+                        
+                        if (route.hasRoundTrip) {
+                            tooltipParts.push(`ROI ida-vuelta: ${route.roiToSenderPct.toFixed(3)}%`);
+                        } else {
+                            tooltipParts.push('Sin ruta de regreso');
+                        }
+                        
+                        const tooltip = tooltipParts.join(' | ');
+                        
+                        // Determinar qué mostrar según objetivo
+                        let mainDisplay = '';
+                        let secondaryDisplay = '';
+                        
+                        switch (objective) {
+                            case 'roundtrip':
+                                mainDisplay = route.hasRoundTrip 
+                                    ? `${route.roiToSenderPct > 0 ? '+' : ''}${route.roiToSenderPct.toFixed(2)}%`
+                                    : '—';
+                                secondaryDisplay = route.hasRoundTrip 
+                                    ? `ROI ${route.roiToSenderPct > 0 ? '✓' : '✗'}`
+                                    : 'Sin regreso';
+                                break;
+                            case 'max_rate':
+                                mainDisplay = route.rate.toFixed(4);
+                                secondaryDisplay = `${route.receiveValue.toFixed(2)} ${route.receiverAsset}`;
+                                break;
+                            case 'min_cost':
+                                mainDisplay = route.costPerDestUnit.toFixed(4);
+                                secondaryDisplay = `Costo ${route.senderAsset}/${route.receiverAsset}`;
+                                break;
+                        }
+                        
+                        html += `
+                            <td class="${cellClass}" style="cursor: pointer;" 
+                                onclick="selectMatrixRoute('${sender.senderId}', '${route.receiverUrl}', ${route.rate})"
+                                title="${tooltip}">
+                                <div class="matrix-cell">
+                                    <span class="matrix-cell-efficiency">${mainDisplay}</span>
+                                    ${isBest ? '<span style="font-size: 20px;">⭐</span>' : ''}
+                                    <span class="matrix-cell-details" style="font-size: 10px;">
+                                        ${secondaryDisplay}
+                                    </span>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += `
+                            <td class="matrix-cell-error">
+                                <div class="matrix-cell">
+                                    <span style="font-size: 18px;">❌</span>
+                                    <span class="matrix-cell-details">${route.error || 'Error'}</span>
+                                </div>
+                            </td>
+                        `;
+                    }
+                });
+                
+                html += `</tr>`;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-left: 4px solid #2196F3; border-radius: 4px;">
+                    <h4 style="margin: 0 0 10px 0; color: #1565C0; font-size: 14px;">
+                        📘 Matriz de Tipos de Cambio Cruzados
+                    </h4>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        <strong>🔄 ¿Qué muestra?</strong> Esta matriz muestra la <strong>tasa efectiva</strong> (R<sub>ij</sub>) 
+                        desde todas (o una) de tus cuentas hacia las wallets destino que ingresaste. Lee la fila como origen y la columna como destino.
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        <strong>📊 Tasa efectiva:</strong> El número en cada celda indica cuántas unidades de la divisa destino 
+                        recibes por cada 1 unidad de la divisa origen. Ejemplo: 1.1503 USD/EUR significa 1.1503 dólares por cada 1 euro.
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        <strong>⚡ Diagonal (1:1):</strong> Si ingresas una de tus propias wallets como destino, verás una celda gris 
+                        mostrando tasa 1:1 (misma wallet, sin conversión).
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        <strong>🔺 Arbitraje triangular:</strong> Si ves un banner púrpura arriba, encontramos un ciclo 
+                        donde puedes ganar dinero haciendo conversiones en cadena (R<sub>ab</sub> × R<sub>bc</sub> × R<sub>ca</sub> > 1).
+                    </p>
+                    <p style="margin: 10px 0 5px 0; font-size: 12px; color: #555; font-weight: 600;">
+                        Código de colores (relativo a mejor tasa):
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        • <strong>Verde brillante ⭐</strong>: Mejor tasa absoluta (conversión más favorable)
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        • <strong>Verde claro</strong>: Excelente (≥98% de la mejor tasa)
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        • <strong>Amarillo</strong>: Buena (≥95% de la mejor tasa)
+                    </p>
+                    <p style="margin: 5px 0; font-size: 12px; color: #555;">
+                        • <strong>Rojo</strong>: Pobre (<95% de la mejor tasa - spread alto)
+                    </p>
+                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #1565C0; font-weight: 600;">
+                        💡 Haz clic en cualquier celda para seleccionar esa conversión y realizar el pago
+                    </p>
+                </div>
+            `;
+            
+            quotePreviewContent.innerHTML = html;
+            
+            // Auto-seleccionar la mejor ruta
+            if (bestRoute) {
+                document.getElementById('senderWallet').value = bestRoute.senderId;
+                document.getElementById('selectedWalletUrl').value = bestRoute.receiverUrl;
+            }
+        }
+        
+        // Función para seleccionar una ruta de la matriz
+        window.selectMatrixRoute = function(senderId, receiverUrl, rate) {
+            document.getElementById('senderWallet').value = senderId;
+            document.getElementById('selectedWalletUrl').value = receiverUrl;
+            showAlert(`✅ Ruta seleccionada: ${senderId} → ${receiverUrl.split('/').pop()} (tasa: ${rate.toFixed(4)})`, 'success');
+        };
+        
+        // Función para seleccionar una wallet de la tabla (modo simple)
+        window.selectWallet = function(walletUrl) {
+            document.getElementById('selectedWalletUrl').value = walletUrl;
+            
+            // Actualizar estilos visuales
+            const rows = document.querySelectorAll('.quote-comparison-table tbody tr');
+            rows.forEach(row => {
+                if (row.dataset.walletUrl === walletUrl) {
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            });
+        };
+        
+        // Listener para el modo matriz
+        document.getElementById('matrixMode').addEventListener('change', (e) => {
+            const matrixMode = e.target.checked;
+            const senderWalletSelect = document.getElementById('senderWallet');
+            const senderWalletLabel = document.querySelector('label[for="senderWallet"]');
+            const objectiveSelector = document.getElementById('objectiveSelector');
+            
+            if (matrixMode) {
+                // Mostrar selector de objetivo
+                objectiveSelector.style.display = 'block';
+                
+                // Modo matriz: cambiar el label del selector de cuenta a opcional
+                if (senderWalletLabel) {
+                    senderWalletLabel.innerHTML = '💳 Filtrar por Cuenta Emisora <small style="font-weight: normal; color: #666;">(opcional - deja en blanco para ver todas)</small>';
+                }
+                senderWalletSelect.removeAttribute('required');
+                
+                // Agregar opción "Todas las cuentas"
+                if (!senderWalletSelect.querySelector('option[value=""]')) {
+                    const allOption = document.createElement('option');
+                    allOption.value = '';
+                    allOption.textContent = '🌐 Todas las cuentas (matriz completa)';
+                    senderWalletSelect.insertBefore(allOption, senderWalletSelect.firstChild);
+                }
+                senderWalletSelect.value = ''; // Seleccionar "Todas" por defecto
+            } else {
+                // Ocultar selector de objetivo
+                objectiveSelector.style.display = 'none';
+                
+                // Modo simple: restaurar label y hacer requerido
+                if (senderWalletLabel) {
+                    senderWalletLabel.innerHTML = '💳 Cuenta Emisora *';
+                }
+                senderWalletSelect.setAttribute('required', 'required');
+                
+                // Remover opción "Todas"
+                const allOption = senderWalletSelect.querySelector('option[value=""]');
+                if (allOption) {
+                    allOption.remove();
+                }
+                // Seleccionar la primera cuenta válida
+                if (senderWalletSelect.options.length > 0) {
+                    senderWalletSelect.selectedIndex = 0;
+                }
+            }
+            
+            // Actualizar cotizaciones
+            clearTimeout(quoteTimeout);
+            quoteTimeout = setTimeout(fetchQuotePreview, 500);
+        });
+        
+        // Listener para el cambio de objetivo
+        document.getElementById('optimizationObjective').addEventListener('change', () => {
+            clearTimeout(quoteTimeout);
+            quoteTimeout = setTimeout(fetchQuotePreview, 500);
+        });
+        
+        // Agregar listeners para obtener cotización automáticamente
+        document.getElementById('senderWallet').addEventListener('change', () => {
+            clearTimeout(quoteTimeout);
+            quoteTimeout = setTimeout(fetchQuotePreview, 500);
+        });
+        
+        document.getElementById('receivingWallets').addEventListener('input', () => {
+            // Debounce: esperar 1000ms después de que el usuario deje de escribir (más tiempo porque pueden ser varias URLs)
+            clearTimeout(quoteTimeout);
+            quoteTimeout = setTimeout(fetchQuotePreview, 1000);
+        });
+        
+        document.getElementById('amount').addEventListener('input', () => {
+            // Debounce: esperar 1000ms después de que el usuario deje de escribir
+            clearTimeout(quoteTimeout);
+            quoteTimeout = setTimeout(fetchQuotePreview, 1000);
+        });
+        
+        // Manejar el envío del formulario
+        document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const form = document.getElementById('paymentForm');
+            
+            // Obtener valores del formulario
+            const senderWalletId = document.getElementById('senderWallet').value;
+            const selectedWalletUrl = document.getElementById('selectedWalletUrl').value.trim();
+            const amount = document.getElementById('amount').value;
+            const description = document.getElementById('description').value.trim();
+            const matrixMode = document.getElementById('matrixMode').checked;
+            
+            // Validaciones
+            if (!selectedWalletUrl) {
+                showAlert('❌ Por favor ingresa al menos una wallet destino y espera a ver la cotización para seleccionarla', 'error');
+                return;
+            }
+            
+            if (!senderWalletId) {
+                if (matrixMode) {
+                    showAlert('❌ Por favor haz clic en una celda de la matriz para seleccionar la ruta óptima', 'error');
+                } else {
+                    showAlert('❌ Por favor selecciona una cuenta emisora', 'error');
+                }
+                return;
+            }
+            
+            // Validar
+            if (!amount) {
+                showAlert('❌ Por favor completa todos los campos requeridos', 'error');
+                return;
+            }
+
+            // Validar formato de URL
+            try {
+                new URL(selectedWalletUrl);
+            } catch {
+                showAlert('❌ La URL de wallet destino no es válida', 'error');
+                return;
+            }
+            
+            // ABRIR POPUP PROACTIVAMENTE antes de la petición (para evitar bloqueadores)
+            // El popup se abrirá con una página de "espera"
+            console.log('Abriendo popup proactivo para aprobación...');
+            approvalPopup = window.open(
+                'about:blank', 
+                'AprobarPagoInterledger', 
+                'width=600,height=700,left=200,top=100,scrollbars=yes,resizable=yes'
+            );
+            
+            if (approvalPopup) {
+                // Mostrar página de espera en el popup
+                approvalPopup.document.write(`
+                    <html>
+                    <head>
+                        <title>Esperando Aprobación</title>
+                        <style>
+                            body {
+                                font-family: 'Segoe UI', sans-serif;
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100vh;
+                                margin: 0;
+                                text-align: center;
+                                padding: 20px;
+                            }
+                            .content {
+                                max-width: 400px;
+                            }
+                            h2 { font-size: 24px; margin-bottom: 20px; }
+                            p { font-size: 16px; line-height: 1.6; opacity: 0.9; }
+                            .spinner {
+                                border: 4px solid rgba(255,255,255,0.3);
+                                border-top: 4px solid white;
+                                border-radius: 50%;
+                                width: 50px;
+                                height: 50px;
+                                animation: spin 1s linear infinite;
+                                margin: 30px auto;
+                            }
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="content">
+                            <div class="spinner"></div>
+                            <h2>⏳ Procesando Pago</h2>
+                            <p>Estamos verificando si se requiere tu aprobación...</p>
+                            <p style="font-size: 14px; margin-top: 30px;">Por favor no cierres esta ventana.</p>
+                        </div>
+                    </body>
+                    </html>
+                `);
+            } else {
+                console.warn('No se pudo abrir popup - bloqueador de popups activo');
+            }
+            
+            // Deshabilitar el botón y mostrar loading
+            submitBtn.disabled = true;
+            loading.classList.add('show');
+            form.style.opacity = '0.5';
+            
+            try {
+                showAlert('⏳ Procesando pago... Si se requiere aprobación, se abrirá en la ventana emergente.', 'info');
+                
+                const response = await fetch('/api/send-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        receivingWalletUrl: selectedWalletUrl,
+                        amount: amount,
+                        description: description,
+                        senderWalletId: senderWalletId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Manejar respuesta 202 (pending_approval)
+                if (response.status === 202 && data.status === 'pending_approval' && data.interactUrl) {
+                    console.log('Se requiere aprobación, redirigiendo popup:', data.interactUrl);
+                    
+                    // Si el popup está abierto, redirigirlo a la URL de aprobación
+                    if (approvalPopup && !approvalPopup.closed) {
+                        try {
+                            approvalPopup.location.href = data.interactUrl;
+                        } catch (e) {
+                            console.error('No se pudo redirigir el popup:', e);
+                            // Si falla, abrir uno nuevo
+                            approvalPopup = window.open(
+                                data.interactUrl, 
+                                'AprobarPagoInterledger', 
+                                'width=600,height=700,left=200,top=100,scrollbars=yes,resizable=yes'
+                            );
+                        }
+                    } else {
+                        // Si no hay popup, abrir uno nuevo
+                        approvalPopup = window.open(
+                            data.interactUrl, 
+                            'AprobarPagoInterledger', 
+                            'width=600,height=700,left=200,top=100,scrollbars=yes,resizable=yes'
+                        );
+                    }
+                    
+                    if (approvalPopup) {
+                        showAlert('🔐 Se necesita tu aprobación<br><br>' +
+                                  '✅ Se ha abierto una ventana para aprobar el pago<br>' +
+                                  '👉 Aprueba el pago en esa ventana<br>' +
+                                  '⏳ El pago se completará automáticamente después<br>' +
+                                  '📝 NO CIERRES ESTA VENTANA', 'info');
+                        
+                        // Esperar 5 segundos para que el usuario vea y apruebe, luego comenzar a completar el pago
+                        setTimeout(async () => {
+                            console.log('Completando pago...');
+                            showAlert('⏳ Completando el pago... Por favor espera.', 'info');
+                            
+                            try {
+                                const completeResponse = await fetch('/api/complete-payment', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        continueData: data.continueData
+                                    })
+                                });
+                                
+                                const completeData = await completeResponse.json();
+                                
+                                // Cerrar el popup
+                                if (approvalPopup && !approvalPopup.closed) {
+                                    try {
+                                        approvalPopup.close();
+                                    } catch (e) {
+                                        // Ignorar
+                                    }
+                                }
+                                
+                                if (completeResponse.ok && completeData.success) {
+                                    // Calcular valores en unidades reales
+                                    const debitValue = parseFloat(completeData.data.debitAmount.value) / Math.pow(10, completeData.data.debitAmount.assetScale);
+                                    const receiveValue = parseFloat(completeData.data.receiveAmount.value) / Math.pow(10, completeData.data.receiveAmount.assetScale);
+                                    
+                                    showAlert('✅ ¡Pago enviado exitosamente!', 'success', {
+                                        'Enviado a': completeData.data.receiver,
+                                        'Monto Debitado': `${debitValue.toFixed(2)} ${completeData.data.debitAmount.assetCode}`,
+                                        'Monto Recibido': `${receiveValue.toFixed(2)} ${completeData.data.receiveAmount.assetCode}`,
+                                        'ID del Pago': completeData.data.outgoingPaymentId,
+                                        'Estado': completeData.data.status
+                                    });
+                                    
+                                    // Limpiar el formulario
+                                    form.reset();
+                                    
+                                    // Ocultar la cotización
+                                    document.getElementById('quotePreview').style.display = 'none';
+                                } else {
+                                    showAlert('❌ Error al completar el pago: ' + (completeData.error || 'Error desconocido'), 'error',
+                                        completeData.details ? { 'Detalles': completeData.details } : null);
+                                }
+                            } catch (error) {
+                                showAlert('❌ Error al completar el pago: ' + error.message, 'error');
+                                console.error('Error:', error);
+                            } finally {
+                                // Re-habilitar el botón
+                                submitBtn.disabled = false;
+                                loading.classList.remove('show');
+                                form.style.opacity = '1';
+                            }
+                        }, 5000); // Esperar 5 segundos antes de completar
+                    } else {
+                        console.warn('No se pudo abrir/redirigir popup');
+                        showAlert('⚠️ No se pudo abrir la ventana de aprobación.<br>' +
+                                  '🔗 Por favor APRUEBA el pago aquí: <br>' +
+                                  '<a href="' + data.interactUrl + '" target="_blank" style="color: #721c24; word-break: break-all; font-weight: bold;">' + 
+                                  data.interactUrl + '</a><br><br>' +
+                                  'Después vuelve y haz click en "Enviar Pago" otra vez.', 'error');
+                        
+                        // Re-habilitar el formulario
+                        submitBtn.disabled = false;
+                        loading.classList.remove('show');
+                        form.style.opacity = '1';
+                    }
+                    
+                    return; // No continuar con el resto de la lógica
+                }
+                
+                if (response.ok && data.success) {
+                    // Cerrar el popup si todavía está abierto
+                    if (approvalPopup && !approvalPopup.closed) {
+                        try {
+                            approvalPopup.close();
+                        } catch (e) {
+                            // Ignorar si no se puede cerrar
+                        }
+                    }
+                    
+                    // Calcular valores en unidades reales
+                    const debitValue = parseFloat(data.data.debitAmount.value) / Math.pow(10, data.data.debitAmount.assetScale);
+                    const receiveValue = parseFloat(data.data.receiveAmount.value) / Math.pow(10, data.data.receiveAmount.assetScale);
+                    
+                    showAlert('✅ ¡Pago enviado exitosamente!', 'success', {
+                        'Enviado a': data.data.receiver,
+                        'Monto Debitado': `${debitValue.toFixed(2)} ${data.data.debitAmount.assetCode}`,
+                        'Monto Recibido': `${receiveValue.toFixed(2)} ${data.data.receiveAmount.assetCode}`,
+                        'ID del Pago': data.data.outgoingPaymentId,
+                        'Estado': data.data.status
+                    });
+                    
+                    // Limpiar el formulario
+                    form.reset();
+                    
+                    // Ocultar la cotización
+                    document.getElementById('quotePreview').style.display = 'none';
+                } else {
+                    // Error en el pago
+                    let errorMessage = '❌ Error al enviar el pago: ' + (data.error || data.message || 'Error desconocido');
+                    
+                    // Si hay URL de interacción en un error (timeout u otro), mostrarla
+                    if (data.interactUrl) {
+                        errorMessage += '<br><br>⚠️ Se requiere aprobación del pago.<br>' +
+                                       '🔗 Por favor APRUEBA el pago aquí: <br>' +
+                                       '<a href="' + data.interactUrl + '" target="_blank" style="color: #721c24; word-break: break-all; font-weight: bold;">' + 
+                                       data.interactUrl + '</a><br><br>' +
+                                       'Después vuelve y haz click en "Enviar Pago" otra vez.';
+                    }
+                    
+                    showAlert(errorMessage, 'error', data.details ? { 'Detalles': data.details } : null);
+                }
+            } catch (error) {
+                showAlert('❌ Error de conexión: ' + error.message, 'error');
+                console.error('Error:', error);
+            } finally {
+                // Re-habilitar el botón y ocultar loading
+                submitBtn.disabled = false;
+                loading.classList.remove('show');
+                form.style.opacity = '1';
+            }
+        });
+
+        // Cargar wallets disponibles al iniciar
+        loadAvailableWallets();
+    </script>
+</body>
+</html>
+
