@@ -5,18 +5,25 @@ Created on Sat Nov  8 14:41:56 2025
 @author: Admin
 """
 
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from typing import Optional
 import requests
 import sqlite3
-import sys
+import os
 
-def get_wallet_url_from_db(public_name: str) -> str | None:
+app = Flask(__name__)
+CORS(app)  # Habilita CORS para desarrollo local
+
+def get_wallet_url_from_db(public_name: str) -> Optional[str]:
     """
     Busca en la base de datos local para encontrar la URL de la billetera
     asociada con un public_name.
     """
     try:
         # 'with' se encarga de cerrar la conexión automáticamente
-        with sqlite3.connect('wallets.db') as conn:
+        db_path = os.path.join(os.path.dirname(__file__), 'wallets.db')
+        with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT wallet_url FROM wallets WHERE public_name = ?", (public_name,))
             result = cursor.fetchone() # fetchone() devuelve una tupla o None
@@ -29,7 +36,7 @@ def get_wallet_url_from_db(public_name: str) -> str | None:
         print(f"Error en la base de datos: {e}")
         return None
 
-def get_wallet_info_by_public_name(public_name: str) -> dict | None:
+def get_wallet_info_by_public_name(public_name: str) -> Optional[dict]:
     """
     Función principal que resuelve el public_name a la información completa de la billetera.
     """
@@ -44,48 +51,136 @@ def get_wallet_info_by_public_name(public_name: str) -> dict | None:
     
     print(f"URL de billetera encontrada en la base de datos local: {wallet_url}")
     
-    # 2. Usar la URL para consultar la API de Open Payments
+    # 2. Usar la URL para consultar la API de Open Payments (dummy por ahora)
     try:
         print("Consultando la API de Open Payments...")
-        response = requests.get(wallet_url, timeout=10)
-        response.raise_for_status()  # Lanza un error para respuestas HTTP 4xx/5xx
+        # Por ahora, devolvemos datos dummy como se solicitó
+        return {
+            'id': wallet_url,
+            'publicName': public_name,
+            'walletUrl': wallet_url,
+            'assetCode': 'EUR',
+            'assetScale': 2,
+            'authServer': 'https://auth.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c',
+            'resourceServer': 'https://ilp.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c'
+        }
         
-        account_info = response.json()
-        print("Información de la cuenta obtenida con éxito desde la API.")
-        return account_info
+    except Exception as e:
+        print(f"Error al obtener información de la billetera: {e}")
+        return None
+
+@app.route('/api/user/<user_id>', methods=['GET'])
+def get_user(user_id):
+    """
+    Endpoint para obtener información de un usuario por su ID (public_name).
+    """
+    try:
+        user_info = get_wallet_info_by_public_name(user_id)
         
-    except requests.exceptions.RequestException as e:
-        # Para la demo, simulamos una respuesta exitosa si la URL de prueba falla
-        if "humberto_wallet" in public_name:
-             print(f"ADVERTENCIA: La llamada real a la API falló ({e}). Devolviendo datos de muestra para la demostración.")
-             return {
-                'id': wallet_url,
-                'publicName': public_name,
-                'assetCode': 'EUR',
-                'assetScale': 2,
-                'authServer': 'https://auth.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c',
-                'resourceServer': 'https://ilp.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c'
-             }
+        if user_info:
+            return jsonify({
+                'success': True,
+                'data': user_info
+            }), 200
         else:
-            print(f"Error al contactar la API de Open Payments: {e}")
-            return None
+            return jsonify({
+                'success': False,
+                'error': f'Usuario con ID "{user_id}" no encontrado'
+            }), 404
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error al buscar usuario: {str(e)}'
+        }), 500
+
+@app.route('/api/send', methods=['POST'])
+def send_transaction():
+    """
+    Endpoint para enviar una transacción.
+    Verifica si el usuario existe, obtiene su URL y hace un GET dummy.
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No se proporcionaron datos'
+            }), 400
+        
+        user_id = data.get('user_id')
+        amount = data.get('amount')
+        
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere user_id'
+            }), 400
+        
+        if not amount:
+            return jsonify({
+                'success': False,
+                'error': 'Se requiere amount'
+            }), 400
+        
+        # Verificar si el usuario existe y obtener sus datos
+        user_info = get_wallet_info_by_public_name(user_id)
+        
+        if not user_info:
+            return jsonify({
+                'success': False,
+                'error': f'Usuario con ID "{user_id}" no encontrado'
+            }), 404
+        
+        wallet_url = user_info.get('walletUrl')
+        
+        # Hacer un GET dummy a la URL del usuario
+        try:
+            print(f"Haciendo GET dummy a: {wallet_url}")
+            # Por ahora, simulamos el GET sin hacer la llamada real
+            # En el futuro, aquí se haría: response = requests.get(wallet_url, timeout=10)
+            dummy_response = {
+                'status': 'success',
+                'message': 'GET dummy realizado correctamente',
+                'walletUrl': wallet_url,
+                'amount': amount,
+                'userInfo': user_info
+            }
+            
+            return jsonify({
+                'success': True,
+                'data': dummy_response
+            }), 200
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Error al realizar GET a la URL del usuario: {str(e)}'
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Error al procesar la transacción: {str(e)}'
+        }), 500
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """
+    Endpoint de salud para verificar que el servidor está funcionando.
+    """
+    return jsonify({
+        'status': 'ok',
+        'message': 'Backend funcionando correctamente'
+    }), 200
 
 if __name__ == "__main__":
-    # Lee el public_name desde los argumentos de la línea de comandos
-    if len(sys.argv) > 1:
-        public_name_to_find = sys.argv[1]
-    else:
-        # Si no se proporciona un argumento, se detiene con un mensaje de error
-        print("Error: Por favor, proporciona un 'publicName' como argumento.")
-        print("Ejemplo: python app.py humberto_wallet")
-        sys.exit(1)
-
-    # Obtener la información de la billetera
-    account_details = get_wallet_info_by_public_name(public_name_to_find)
-
-    if account_details:
-        print("\n--- Detalles de la Cuenta del Destinatario ---")
-        # Imprimir el diccionario de forma legible
-        import json
-        print(json.dumps(account_details, indent=4))
-        print("\nAhora puedes usar estos detalles para iniciar una transferencia.")
+    # Verificar que la base de datos existe
+    db_path = os.path.join(os.path.dirname(__file__), 'wallets.db')
+    if not os.path.exists(db_path):
+        print("ADVERTENCIA: La base de datos wallets.db no existe.")
+        print("Ejecuta 'python manage_database.py init' para crearla.")
+    
+    # Ejecutar el servidor Flask en modo desarrollo
+    app.run(host='0.0.0.0', port=5000, debug=True)

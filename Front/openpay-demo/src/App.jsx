@@ -1,14 +1,28 @@
 import React, { useState } from 'react';
 import './App.css';
 
+// URL del backend - ajusta el puerto si es necesario
+const API_BASE_URL = 'http://localhost:5000';
+
 export default function App() {
   const [usuario, setUsuario] = useState('AnaRaquel');
   const [saldo, setSaldo] = useState(12480.25);
   // Estado para controlar el valor del input de Monto
   const [monto, setMonto] = useState(''); 
+  // Estado para el ID del usuario destino
+  const [userIdDestino, setUserIdDestino] = useState('');
+  // Estados para manejar la carga y errores
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [pestaña, setPestaña] = useState('inicio'); 
 
   const handleUsuarioChange = (e) => setUsuario(e.target.value);
+  const handleUserIdDestinoChange = (e) => {
+    setUserIdDestino(e.target.value);
+    setError(''); // Limpiar error al escribir
+    setSuccess(''); // Limpiar mensaje de éxito
+  };
 
   // FUNCIÓN CORREGIDA: Bloquea letras y el signo menos (-)
   const handleMontoChange = (e) => {
@@ -28,12 +42,55 @@ export default function App() {
     }
 
     setMonto(valor);
+    setError(''); // Limpiar error al escribir
+    setSuccess(''); // Limpiar mensaje de éxito
   };
   
-  // Simulación de envío
-  const handleEnviar = () => {
-    alert(`Simulando envío de ${monto || 'el monto'} a ${usuario}`);
-    setMonto(''); // Limpia el campo después de "enviar"
+  // Función para enviar transacción conectada al backend
+  const handleEnviar = async () => {
+    // Validaciones
+    if (!userIdDestino.trim()) {
+      setError('Por favor ingresa el ID del usuario destino');
+      return;
+    }
+    
+    if (!monto || parseFloat(monto) <= 0) {
+      setError('Por favor ingresa un monto válido');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      // Llamar al endpoint de envío del backend
+      const response = await fetch(`${API_BASE_URL}/api/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userIdDestino.trim(),
+          amount: parseFloat(monto)
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setSuccess(`Transacción enviada exitosamente a ${userIdDestino}. Monto: $${monto}`);
+        setMonto(''); // Limpiar el campo de monto
+        setUserIdDestino(''); // Limpiar el campo de usuario destino
+      } else {
+        setError(data.error || 'Error al enviar la transacción');
+      }
+    } catch (err) {
+      console.error('Error al conectar con el backend:', err);
+      setError('Error de conexión. Asegúrate de que el backend esté ejecutándose en http://localhost:5000');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,7 +119,10 @@ export default function App() {
             <input
               className="input"
               type="text"
-              placeholder="URL o Id del usuario destino"
+              placeholder="ID del usuario destino (ej: humberto_wallet)"
+              value={userIdDestino}
+              onChange={handleUserIdDestinoChange}
+              disabled={loading}
             />
             <input
               className="input"
@@ -72,9 +132,26 @@ export default function App() {
               // El patrón inputmode="decimal" ayuda a abrir el teclado numérico en móviles
               inputMode="decimal" 
               value={monto} 
-              onChange={handleMontoChange} 
+              onChange={handleMontoChange}
+              disabled={loading}
             />
-            <button onClick={handleEnviar}>Confirmar envío</button>
+            {error && (
+              <div style={{ color: 'red', marginTop: '10px', fontSize: '14px' }}>
+                {error}
+              </div>
+            )}
+            {success && (
+              <div style={{ color: 'green', marginTop: '10px', fontSize: '14px' }}>
+                {success}
+              </div>
+            )}
+            <button 
+              onClick={handleEnviar}
+              disabled={loading}
+              style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+            >
+              {loading ? 'Enviando...' : 'Confirmar envío'}
+            </button>
           </div>
         )}
 
