@@ -1,4 +1,4 @@
-# 🏦 Pythonistas Interledger — STP Multi-Currency Demo - ILCash
+# 🏦 Pythonistas Interledger — STP Multi-Currency Demo - IL-Cash
 
 **Pythonistas Interledger** is a prototype for a **multi-currency STP (Sistema de Transferencias y Pagos)** built with **Flask (Python)** and **HTML/JavaScript frontend**.  
 The goal is to **enable cross-currency transfers and optimize exchange rates**, simulating a **multi-network payment system** inspired by **Open Payments** and the **Interledger Protocol (ILP)**.  
@@ -62,6 +62,7 @@ This project is currently shared under the MIT License — feel free to fork, le
 🧩 Pythonistas Interledger: building open, inclusive, and borderless payments from Mexico to the world.
 
 ---
+
 
 
 
