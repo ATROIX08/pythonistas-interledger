@@ -4,183 +4,77 @@ Created on Sat Nov  8 14:41:56 2025
 
 @author: Admin
 """
-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from typing import Optional
-import requests
 import sqlite3
 import os
+import requests
+import uuid
+import time
 
 app = Flask(__name__)
-CORS(app)  # Habilita CORS para desarrollo local
+CORS(app)
 
-def get_wallet_url_from_db(public_name: str) -> Optional[str]:
-    """
-    Busca en la base de datos local para encontrar la URL de la billetera
-    asociada con un public_name.
-    """
+def get_wallet_url_from_db(public_name: str):
+    db_path = os.path.join(os.path.dirname(__file__), 'wallets.db')
     try:
-        # 'with' se encarga de cerrar la conexión automáticamente
-        db_path = os.path.join(os.path.dirname(__file__), 'wallets.db')
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
             cursor.execute("SELECT wallet_url FROM wallets WHERE public_name = ?", (public_name,))
-            result = cursor.fetchone() # fetchone() devuelve una tupla o None
-            
+            result = cursor.fetchone()
             if result:
-                return result[0] # Devolver el primer elemento de la tupla (la URL)
-            else:
-                return None
+                return result[0]
     except sqlite3.Error as e:
-        print(f"Error en la base de datos: {e}")
-        return None
+        print(f"DB error: {e}")
+    return None
 
-def get_wallet_info_by_public_name(public_name: str) -> Optional[dict]:
-    """
-    Función principal que resuelve el public_name a la información completa de la billetera.
-    """
-    print(f"\nIniciando búsqueda para el publicName: '{public_name}'...")
-    
-    # 1. Obtener la URL de la billetera desde nuestra base de datos local
-    wallet_url = get_wallet_url_from_db(public_name)
-    
-    if not wallet_url:
-        print(f"Error: No se pudo encontrar una URL de billetera para el publicName '{public_name}'.")
-        return None
-    
-    print(f"URL de billetera encontrada en la base de datos local: {wallet_url}")
-    
-    # 2. Usar la URL para consultar la API de Open Payments (dummy por ahora)
+def fetch_wallet_address_info(wallet_url: str):
+    # GET the wallet address resource
     try:
-        print("Consultando la API de Open Payments...")
-        # Por ahora, devolvemos datos dummy como se solicitó
-        return {
-            'id': wallet_url,
-            'publicName': public_name,
-            'walletUrl': wallet_url,
-            'assetCode': 'EUR',
-            'assetScale': 2,
-            'authServer': 'https://auth.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c',
-            'resourceServer': 'https://ilp.interledger-test.dev/f537937b-7016-481b-b655-9f0d1014822c'
+        headers = {
+            "Accept": "application/json"
         }
-        
+        resp = requests.get(wallet_url, headers=headers, timeout=10)
+        resp.raise_for_status()
+        return resp.json()
     except Exception as e:
-        print(f"Error al obtener información de la billetera: {e}")
+        print(f"Error fetching wallet address info: {e}")
         return None
 
-@app.route('/api/user/<user_id>', methods=['GET'])
-def get_user(user_id):
-    """
-    Endpoint para obtener información de un usuario por su ID (public_name).
-    """
-    try:
-        user_info = get_wallet_info_by_public_name(user_id)
-        
-        if user_info:
-            return jsonify({
-                'success': True,
-                'data': user_info
-            }), 200
-        else:
-            return jsonify({
-                'success': False,
-                'error': f'Usuario con ID "{user_id}" no encontrado'
-            }), 404
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al buscar usuario: {str(e)}'
-        }), 500
+@app.route('/api/user/<public_name>', methods=['GET'])
+def get_user(public_name):
+    wallet_url = get_wallet_url_from_db(public_name)
+    if not wallet_url:
+        return jsonify({ "success": False, "error": f"No wallet for user {public_name}" }), 404
+
+    wallet_info = fetch_wallet_address_info(wallet_url)
+    if not wallet_info:
+        return jsonify({ "success": False, "error": "Could not fetch wallet info" }), 500
+
+    return jsonify({ "success": True, "data": wallet_info }), 200
 
 @app.route('/api/send', methods=['POST'])
 def send_transaction():
-    """
-    Endpoint para enviar una transacción.
-    Verifica si el usuario existe, obtiene su URL y hace un GET dummy.
-    """
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({
-                'success': False,
-                'error': 'No se proporcionaron datos'
-            }), 400
-        
-        user_id = data.get('user_id')
-        amount = data.get('amount')
-        
-        if not user_id:
-            return jsonify({
-                'success': False,
-                'error': 'Se requiere user_id'
-            }), 400
-        
-        if not amount:
-            return jsonify({
-                'success': False,
-                'error': 'Se requiere amount'
-            }), 400
-        
-        # Verificar si el usuario existe y obtener sus datos
-        user_info = get_wallet_info_by_public_name(user_id)
-        
-        if not user_info:
-            return jsonify({
-                'success': False,
-                'error': f'Usuario con ID "{user_id}" no encontrado'
-            }), 404
-        
-        wallet_url = user_info.get('walletUrl')
-        
-        # Hacer un GET dummy a la URL del usuario
-        try:
-            print(f"Haciendo GET dummy a: {wallet_url}")
-            # Por ahora, simulamos el GET sin hacer la llamada real
-            # En el futuro, aquí se haría: response = requests.get(wallet_url, timeout=10)
-            dummy_response = {
-                'status': 'success',
-                'message': 'GET dummy realizado correctamente',
-                'walletUrl': wallet_url,
-                'amount': amount,
-                'userInfo': user_info
-            }
-            
-            return jsonify({
-                'success': True,
-                'data': dummy_response
-            }), 200
-            
-        except Exception as e:
-            return jsonify({
-                'success': False,
-                'error': f'Error al realizar GET a la URL del usuario: {str(e)}'
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Error al procesar la transacción: {str(e)}'
-        }), 500
+    data = request.get_json()
+    print("\n📦 Datos recibidos del front:", data)  # 👈 Agregado para depurar
+
+    if not data:
+        return jsonify({ "success": False, "error": "No data provided" }), 400
+
+    sender_id = data.get('sender_public_name')
+    recipient_wallet_url = data.get('recipient_wallet_url')
+    amount = data.get('amount')
+
+    if not sender_id or not recipient_wallet_url or not amount:
+        print("❌ Faltan campos:", sender_id, recipient_wallet_url, amount)  # 👈 Agregado
+        return jsonify({ "success": False, "error": "Missing sender_public_name, recipient_wallet_url or amount" }), 400
 
 @app.route('/api/health', methods=['GET'])
-def health_check():
-    """
-    Endpoint de salud para verificar que el servidor está funcionando.
-    """
-    return jsonify({
-        'status': 'ok',
-        'message': 'Backend funcionando correctamente'
-    }), 200
+def health():
+    return jsonify({ "status": "ok", "message": "Backend funcionando correctamente" }), 200
 
 if __name__ == "__main__":
-    # Verificar que la base de datos existe
     db_path = os.path.join(os.path.dirname(__file__), 'wallets.db')
     if not os.path.exists(db_path):
-        print("ADVERTENCIA: La base de datos wallets.db no existe.")
-        print("Ejecuta 'python manage_database.py init' para crearla.")
-    
-    # Ejecutar el servidor Flask en modo desarrollo
+        print("Warning: wallets.db no existe. Cree la base de datos.")
     app.run(host='0.0.0.0', port=5000)
