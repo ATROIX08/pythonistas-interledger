@@ -1,17 +1,19 @@
-.env
+# ==============================================
+# HACKATHON NOTE:
+# The following lines are commented out for hackathon evaluation purposes
+# In production, these files should NEVER be committed to version control
+# ==============================================
+
+# .env
+# keys/*.key
+# keys/*.pem
+# *.key
+# *.pem
+
 # Dependencies
 node_modules/
 package-lock.json
 pnpm-lock.yaml
-
-# Environment variables
-.env
-
-# Private keys
-keys/*.key
-keys/*.pem
-*.key
-*.pem
 
 # Logs
 logs/
