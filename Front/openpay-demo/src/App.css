@@ -1,0 +1,245 @@
+/* Fondo general */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(180deg, #072f4f 0%, #0d1b2a 100%);
+  color: #fff;
+}
+
+/* Contenedor principal */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+/* Encabezado */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 32, 65, 0.95);
+  padding: 1rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  margin-bottom: 1rem;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #0ef;
+  letter-spacing: 1px;
+}
+
+.user-tag {
+  background: #0ef3;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-weight: 500;
+  border: 1px solid #0ef6;
+}
+
+/* Contenido principal */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* Tarjetas (card) */
+.card {
+  background: rgba(10, 24, 48, 0.9);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+}
+
+/* --- INICIO DE NUEVOS CAMBIOS (Petición de agrandar) --- */
+/* 1. Hacer la tarjeta de saldo más grande (más padding vertical) */
+.saldo-card {
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+/* 2. Agrandar el monto de saldo SOLO en esa tarjeta */
+.saldo-card .saldo {
+  font-size: 3rem; /* Era 2.4rem */
+  margin-bottom: 1.5rem;
+}
+/* --- FIN DE NUEVOS CAMBIOS --- */
+
+.card h2 {
+  margin-top: 0;
+  color: #00c8ff;
+  margin-bottom: 0.5rem;
+}
+
+.saldo {
+  font-size: 2.4rem;
+  font-weight: bold;
+  margin: 0.5rem 0 1rem;
+}
+
+/* Botones */
+button {
+  background: #00c8ff;
+  color: #001;
+  border: none;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:hover {
+  background: #00e6ff;
+  transform: translateY(-1px);
+}
+
+/* Acciones rápidas (AUNQUE SE BORRARON DE 'INICIO', LO DEJAMOS POR SI SE USA EN OTRO LADO) */
+.quick-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quick-actions button {
+  flex: 1;
+  background: #122b53;
+  color: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  font-weight: 500;
+  border: 1px solid #0ef5;
+}
+
+.quick-actions button:hover {
+  background: #164078;
+}
+
+/* Historial */
+.history {
+  background: rgba(12, 26, 52, 0.9);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.history h3 {
+  color: #0ef;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.history ul {
+  list-style: none;
+  padding: 0;
+}
+
+.history li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.history li:last-child {
+  border-bottom: none;
+}
+
+/* Sección de usuario */
+.user-login {
+  background: rgba(12, 26, 52, 0.9);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  text-align: center;
+}
+
+/* --- INICIO DE CORRECCIONES Y MEJORAS (De la vez pasada) --- */
+
+/* CORRECCIÓN 1: Para la pestaña "Config" (Label) */
+.user-login label {
+  display: block;      
+  margin-bottom: 0.8rem; 
+  font-size: 1.1rem;   
+}
+
+/* CORRECCIÓN 2: Para la pestaña "Config" (Input) */
+.user-login input {
+  display: block;
+  width: 90%;
+  max-width: 450px;
+  padding: 0.8rem 1rem;
+  margin: 0.8rem auto;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  background: #fff;
+  color: #0d1b2a;
+}
+
+/* CORRECCIÓN 3: Para la pestaña "Transferir" (Input) */
+.input {
+  display: block;
+  width: 90%;
+  max-width: 450px;
+  padding: 0.8rem 1rem;
+  margin: 0.8rem auto;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  background: #fff;
+  color: #0d1b2a;
+}
+
+/* MEJORA PROFESIONAL: Efecto 'focus' */
+.input:focus,
+.user-login input:focus {
+  outline: none; 
+  box-shadow: 0 0 0 3px rgba(0, 239, 255, 0.5); 
+  border: 1px solid #0ef;
+}
+
+/* --- FIN DE CORRECCIONES Y MEJORAS --- */
+
+.hint {
+  color: #ccc;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Barra de navegación inferior */
+.bottom-nav {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(10, 24, 48, 0.95);
+  padding: 0.8rem 0;
+  border-top: 1px solid rgba(0,255,255,0.2);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.3);
+}
+
+.bottom-nav button {
+  flex: 1;
+  background: transparent;
+  color: #eee;
+  border: none;
+  font-size: 1.1rem;
+}
+
+.bottom-nav button.active {
+  color: #0ef;
+  font-weight: bold;
+  text-shadow: 0 0 8px #0ef;
+}
